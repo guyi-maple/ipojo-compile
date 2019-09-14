@@ -56,7 +56,8 @@ public class ClassEditor {
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
                     try{
-                        if (!field.getField().getType().isInterface()){
+                        if ((!field.getField().getType().isInterface())
+                                && (!Modifier.isAbstract(field.getField().getType().getModifiers()))){
                             return String.format(
                                     "$0.%s((%s) $1.get(%s.class,true));",
                                     setMethod.getName(),
