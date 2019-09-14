@@ -2,8 +2,8 @@ package top.guyi.iot.ipojo.compile.lib.classes;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
-import javassist.CtClass;
 import javassist.NotFoundException;
+import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 
 import java.util.Objects;
 import java.util.Set;
@@ -14,12 +14,12 @@ public class ClassCompiler {
     private ClassScanner scanner = new ClassScanner();
     private ClassEditor editor = new ClassEditor();
 
-    public Set<CtClass> compile(ClassPool pool,String path) {
+    public Set<CompileClass> compile(ClassPool pool, String path) {
         return this.scanner.getComponent(pool,path)
                 .stream()
                 .map(component -> {
                     try {
-                        editor.addInjectMethod(pool,component);
+                        editor.addInjectMethod(pool,component.getClasses());
                         return component;
                     } catch (CannotCompileException | NotFoundException e) {
                         e.printStackTrace();

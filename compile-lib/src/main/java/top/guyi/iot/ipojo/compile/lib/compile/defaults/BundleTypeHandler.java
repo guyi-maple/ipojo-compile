@@ -3,14 +3,16 @@ package top.guyi.iot.ipojo.compile.lib.compile.defaults;
 import com.google.gson.Gson;
 import top.guyi.iot.ipojo.application.ApplicationContext;
 import top.guyi.iot.ipojo.application.osgi.DefaultApplicationActivator;
-import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentInfo;
-import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.compile.entry.*;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
-import top.guyi.iot.ipojo.compile.lib.compile.entry.Dependency;
 import javassist.*;
 import org.apache.commons.io.IOUtils;
 import org.osgi.framework.BundleContext;
+import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentInfo;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
+import top.guyi.iot.ipojo.compile.lib.project.entry.Dependency;
+import top.guyi.iot.ipojo.compile.lib.project.configuration.ProjectInfo;
 
 import java.util.LinkedHashSet;
 import java.util.Optional;
@@ -31,8 +33,8 @@ public class BundleTypeHandler implements CompileTypeHandler {
     private Gson gson = new Gson();
 
     @Override
-    public Set<CtClass> handle(ClassPool pool, String path, CompileInfo compileInfo, Set<CtClass> components) throws Exception {
-        this.createActivator(pool, path, compileInfo, components);
+    public Set<CompileClass> handle(ClassPool pool, String path, CompileInfo compileInfo, ProjectInfo projectInfo, Set<CompileClass> components) throws Exception {
+        this.createActivator(pool, path, compileInfo,projectInfo, components);
         return components;
     }
 
@@ -44,7 +46,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
      * @param components
      * @throws Exception
      */
-    private void createActivator(ClassPool pool, String path, CompileInfo compileInfo, Set<CtClass> components) throws Exception {
+    private void createActivator(ClassPool pool, String path, CompileInfo compileInfo, ProjectInfo projectInfo, Set<CompileClass> components) throws Exception {
         // 创建类对象
         CtClass activator = pool.makeClass(String.format("%s.Activator", compileInfo.getPackageName()));
         CtMethod registerMethod = new CtMethod(CtClass.voidType, "registerComponent", new CtClass[]{
@@ -55,7 +57,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
         activator.setSuperclass(pool.get(DefaultApplicationActivator.class.getName()));
         // 注册支持库组件
         StringBuilder registerMethodBody = new StringBuilder("{\n");
-        for (Dependency dependency : Optional.ofNullable(compileInfo.getDependencies()).orElse(new LinkedHashSet<>())) {
+        for (Dependency dependency : Optional.ofNullable(projectInfo.getDependencies()).orElse(new LinkedHashSet<>())) {
             JarFile jar = new JarFile(dependency.getPath());
             ZipEntry entry = jar.getEntry("component.info");
             if (entry != null) {
@@ -69,7 +71,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
             }
         }
         // 注册组件
-        components.forEach(component -> registerMethodBody.append(String.format("$1.register(%s.class);\n", component.getName())));
+        components.forEach(component -> registerMethodBody.append(String.format("$1.register(%s.class);\n", component.getClasses().getName())));
         registerMethodBody.append("}\n");
 
         registerMethod.setBody(registerMethodBody.toString());
@@ -80,7 +82,9 @@ public class BundleTypeHandler implements CompileTypeHandler {
         getNameMethod.setBody(String.format("{return \"%s\";}", compileInfo.getName()));
         activator.addMethod(getNameMethod);
 
-        activator.writeFile(path);
+        components.add(new CompileClass(activator));
+
+        compileInfo.setActivator(activator.getName());
     }
 
 }

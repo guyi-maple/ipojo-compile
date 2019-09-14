@@ -1,8 +1,8 @@
 package top.guyi.iot.ipojo.compile.expand.service;
 
 import top.guyi.iot.ipojo.application.ApplicationContext;
-import top.guyi.iot.ipojo.compile.lib.compile.CompileExecutor;
-import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
+import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
 import top.guyi.iot.ipojo.compile.lib.expand.CompileExpand;
 import javassist.*;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -24,11 +24,11 @@ public class BundleServiceReferenceExpand implements CompileExpand {
     }
 
     @Override
-    public Set<CtClass> execute(ClassPool pool, String path, CompileInfo compileInfo, Set<CtClass> components) throws Exception {
+    public Set<CompileClass> execute(ClassPool pool, String path, CompileInfo compileInfo, Set<CompileClass> components) throws Exception {
         StringBuilder methodBody = new StringBuilder("{\n");
 
-        for (CtClass component : components) {
-            for (CtMethod method : this.getMethods(component)) {
+        for (CompileClass component : components) {
+            for (CtMethod method : this.getMethods(component.getClasses())) {
                 BundleServiceReference reference = (BundleServiceReference) method.getAnnotation(BundleServiceReference.class);
 
                 String checker = "null";
@@ -40,7 +40,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
                         "$0.register(new %s(%s,%s,%s));\n",
                         ServiceReferenceEntry.class.getName(),
                         this.getClassString(reference),
-                        this.invokerMethod(pool,component,method,compileInfo),
+                        this.invokerMethod(pool,component.getClasses(),method,compileInfo),
                         checker
                 ));
             }
@@ -59,7 +59,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
 
         listener.addMethod(registerAll);
 
-        components.add(listener);
+        components.add(new CompileClass(listener));
 
         return components;
     }

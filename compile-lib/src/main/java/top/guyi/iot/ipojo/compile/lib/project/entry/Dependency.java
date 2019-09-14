@@ -1,4 +1,4 @@
-package top.guyi.iot.ipojo.compile.lib.compile.entry;
+package top.guyi.iot.ipojo.compile.lib.project.entry;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,6 +12,14 @@ public class Dependency {
     private String artifactId;
     private String version;
     private String scope;
+
+    public String getFileName(){
+        return String.format("%s-%s.jar",artifactId,version);
+    }
+
+    public String getName(){
+        return String.format("%s:%s:%s",groupId,artifactId,version);
+    }
 
     public String getPath(){
         return String.format(

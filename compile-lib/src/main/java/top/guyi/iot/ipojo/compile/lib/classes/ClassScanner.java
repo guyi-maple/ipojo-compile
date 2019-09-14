@@ -2,14 +2,11 @@ package top.guyi.iot.ipojo.compile.lib.classes;
 
 import top.guyi.iot.ipojo.application.annotation.Component;
 import javassist.ClassPool;
-import javassist.CtClass;
 import javassist.NotFoundException;
+import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 
 import java.io.File;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ClassScanner {
@@ -28,17 +25,19 @@ public class ClassScanner {
         return files;
     }
 
-    public Set<CtClass> scan(ClassPool pool,String path){
+    public Set<CompileClass> scan(ClassPool pool, String path){
         Set<File> files = this.getClassFile(new File(path),new HashSet<>());
+
         return files.stream()
                 .map(file -> {
                     try {
-                        return pool.get(
-                                file.getAbsolutePath()
+                        String absolute = file.getAbsolutePath().replace("\\","/");
+                        return new CompileClass(pool.get(
+                                absolute
                                         .replace(path,"")
                                         .replace("/",".")
                                         .replace(".class","")
-                        );
+                        ));
                     } catch (NotFoundException e) {
                         e.printStackTrace();
                         return null;
@@ -48,10 +47,10 @@ public class ClassScanner {
                 .collect(Collectors.toSet());
     }
 
-    public Set<CtClass> getComponent(ClassPool pool,String path){
+    public Set<CompileClass> getComponent(ClassPool pool,String path){
         return this.scan(pool,path)
                 .stream()
-                .filter(classes -> classes.hasAnnotation(Component.class))
+                .filter(compile -> compile.getClasses().hasAnnotation(Component.class))
                 .collect(Collectors.toSet());
     }
 

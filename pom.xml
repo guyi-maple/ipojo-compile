@@ -29,6 +29,11 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>top.guyi.iot.ipojo</groupId>
+                <artifactId>ipojo</artifactId>
+                <version>${ipojo.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>top.guyi.iot.ipojo.compile</groupId>
                 <artifactId>compile-lib</artifactId>
                 <version>${project.version}</version>
@@ -37,14 +42,6 @@
                 <groupId>top.guyi.iot.ipojo.compile</groupId>
                 <artifactId>default-compile-expand</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>top.guyi.iot.ipojo</groupId>
-                <artifactId>ipojo-dependencies</artifactId>
-                <version>${ipojo.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
 
             <dependency>
@@ -74,7 +71,7 @@
 
         <dependency>
             <groupId>top.guyi.iot.ipojo</groupId>
-            <artifactId>application-context</artifactId>
+            <artifactId>ipojo</artifactId>
         </dependency>
 
     </dependencies>

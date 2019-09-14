@@ -1,8 +1,8 @@
 package top.guyi.iot.ipojo.compile.lib.expand;
 
-import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
+import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
 import javassist.ClassPool;
-import javassist.CtClass;
 
 import java.util.Set;
 
@@ -21,6 +21,6 @@ public interface CompileExpand {
      * @return 更新后的项目组件
      * @throws Exception
      */
-    Set<CtClass> execute(ClassPool pool, String path, CompileInfo compileInfo, Set<CtClass> components) throws Exception;
+    Set<CompileClass> execute(ClassPool pool, String path, CompileInfo compileInfo, Set<CompileClass> components) throws Exception;
 
 }

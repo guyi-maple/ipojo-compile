@@ -5,14 +5,14 @@ import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.classes.ClassCompiler;
 import top.guyi.iot.ipojo.compile.lib.compile.defaults.BundleTypeHandler;
 import top.guyi.iot.ipojo.compile.lib.compile.defaults.ComponentTypeHandler;
-import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileInfo;
-import top.guyi.iot.ipojo.compile.lib.compile.entry.Dependency;
-import top.guyi.iot.ipojo.compile.lib.compile.entry.ProjectInfo;
+import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
+import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.project.entry.Dependency;
+import top.guyi.iot.ipojo.compile.lib.project.configuration.ProjectInfo;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.expand.CompileExpand;
 import top.guyi.iot.ipojo.compile.lib.compile.exception.CompileInfoFileNotFoundException;
 import javassist.ClassPool;
-import javassist.CtClass;
 import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.compile.lib.expand.ManifestExpand;
 import top.guyi.iot.ipojo.compile.lib.manifest.ManifestWriter;
@@ -22,8 +22,6 @@ import java.io.FileInputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -37,17 +35,8 @@ public class CompileExecutor {
 
     private CompileInfo compileInfo;
     private Map<CompileType, CompileTypeHandler> typeHandlers;
-    private List<CompileInfoSetter> compileInfoSetters = new LinkedList<>();
     private List<CompileExpand> compileExpands = new LinkedList<>();
     private List<ManifestExpand> manifestExpands = new LinkedList<>();
-
-    /**
-     * 添加编译信息设置器
-     * @param setter 编译信息设置器
-     */
-    public void compileInfoSetter(CompileInfoSetter setter){
-        this.compileInfoSetters.add(setter);
-    }
 
     /**
      * 添加编译拓展
@@ -83,24 +72,21 @@ public class CompileExecutor {
      * @param path 项目Class文件路径
      * @throws Exception
      */
-    public void execute(String path, ProjectInfo projectInfo) throws Exception {
+    public CompileInfo execute(String path, ProjectInfo projectInfo) throws Exception {
+        path = path.replace("\\","/");
         path = path.endsWith("/") ? path : path + "/";
 
-        Optional.ofNullable(projectInfo)
-                .ifPresent(info -> info.setFinalName(this.getFinalName(projectInfo)));
+        projectInfo = Optional.ofNullable(projectInfo).orElseGet(ProjectInfo::new);
 
-        File file = new File(path + "/compile.info");
+        File file = Optional.of(new File(path + "/compile.info"))
+                .filter(File::exists)
+                .orElse(new File(projectInfo.getBaseDir() + "/compile.info"));
         if (file.exists()) {
             compileInfo = this.gson.fromJson(IOUtils.toString(new FileInputStream(file)), CompileInfo.class);
 
             if (StringUtils.isEmpty(compileInfo.getOutput())){
                 compileInfo.setOutput(path);
             }
-
-            // 执行编译信息设置器
-            this.compileInfoSetters.forEach(setter ->
-                compileInfo = setter.set(compileInfo)
-            );
 
             // 检查编译信息配置是否错误
             compileInfo.check();
@@ -112,14 +98,14 @@ public class CompileExecutor {
             Method add = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
             add.setAccessible(true);
             // 添加编译期依赖
-            for (Dependency dependency : Optional.ofNullable(this.compileInfo.getDependencies())
-                    .orElse(new LinkedHashSet<>())) {
+            add.invoke(classLoader,new URL(String.format("file:///%s",path)));
+            for (Dependency dependency : projectInfo.getDependencies()) {
                 pool.appendClassPath(dependency.getPath());
                 add.invoke(classLoader,new URL(String.format("file:///%s",dependency.getPath())));
             }
 
             // 获取组件列表
-            Set<CtClass> components = this.compiler.compile(pool,path);
+            Set<CompileClass> components = this.compiler.compile(pool,path);
 
             // 执行拓展
             for (CompileExpand expand : this.compileExpands) {
@@ -129,27 +115,20 @@ public class CompileExecutor {
             // 执行编译处理器
             CompileTypeHandler handler = this.typeHandlers.get(compileInfo.getType());
             if (handler != null) {
-                handler.handle(pool,path, compileInfo, components);
+                handler.handle(pool,path, compileInfo,projectInfo, components);
             }
 
             // 写出类文件
-            for (CtClass component : components) {
-                component.writeFile(compileInfo.getOutput());
+            for (CompileClass component : components) {
+                if (component.isWrite()){
+                    component.getClasses().writeFile(compileInfo.getOutput());
+                }
             }
 
-            manifestWriter.write(compileInfo,projectInfo,this.manifestExpands);
+            manifestWriter.write(pool,components,compileInfo,projectInfo,this.manifestExpands);
 
-            if (compileInfo.isDelete()) {
-                //移除编译信息文件
-                Files.delete(Paths.get(file.getAbsolutePath()));
-            }
-
-        } else {
-            throw new CompileInfoFileNotFoundException();
+            return compileInfo;
         }
-    }
-
-    public String getFinalName(ProjectInfo info) {
 
         return null;
     }
