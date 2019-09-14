@@ -3,6 +3,8 @@ package top.guyi.iot.ipojo.compile.lib.classes;
 import top.guyi.iot.ipojo.application.ApplicationContext;
 import top.guyi.iot.ipojo.application.annotation.Resource;
 import top.guyi.iot.ipojo.application.component.ComponentInterface;
+import top.guyi.iot.ipojo.application.utils.StringUtils;
+import top.guyi.iot.ipojo.compile.lib.classes.entry.FieldEntry;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
 import javassist.*;
 
@@ -28,9 +30,22 @@ public class ClassEditor {
         return this.componentInterfaceClass;
     }
 
-    public List<CtField> getFields(CtClass classes){
+    public List<FieldEntry> getFields(CtClass classes){
         return Arrays.stream(classes.getDeclaredFields())
-                .filter(field -> field.hasAnnotation(Resource.class))
+                .map(field -> {
+                    try {
+                        Resource resource = (Resource) field.getAnnotation(Resource.class);
+                        if (StringUtils.isEmpty(resource.value())){
+                            return new FieldEntry(field);
+                        }else{
+                            return new FieldEntry(field,resource.value());
+                        }
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -39,14 +54,33 @@ public class ClassEditor {
         this.getFields(classes)
                 .stream()
                 .map(field -> {
-                    CtMethod setMethod = JavassistUtils.getSetMethod(classes,field);
+                    CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
                     try{
-                        return String.format(
-                                "$0.%s((%s) $1.get(%s.class));",
-                                setMethod.getName(),
-                                field.getType().getName(),
-                                field.getType().getName()
-                        );
+                        if (!field.getField().getType().isInterface()){
+                            return String.format(
+                                    "$0.%s((%s) $1.get(%s.class,true));",
+                                    setMethod.getName(),
+                                    field.getField().getType().getName(),
+                                    field.getField().getType().getName()
+                            );
+                        }else{
+                            if (StringUtils.isEmpty(field.getName())){
+                                return String.format(
+                                        "$0.%s((%s) $1.get(%s.class));",
+                                        setMethod.getName(),
+                                        field.getField().getType().getName(),
+                                        field.getField().getType().getName()
+                                );
+                            }else{
+                                return String.format(
+                                        "$0.%s((%s) $1.get(%s.class,\"%s\"));",
+                                        setMethod.getName(),
+                                        field.getField().getType().getName(),
+                                        field.getField().getType().getName(),
+                                        field.getName()
+                                );
+                            }
+                        }
                     }catch (NotFoundException e){
                         e.printStackTrace();
                         return null;

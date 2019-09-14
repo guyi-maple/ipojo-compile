@@ -29,7 +29,7 @@ public class ServiceRegisterExpand implements CompileExpand {
                     try {
                         Service service = (Service) component.getClasses().getAnnotation(Service.class);
                         methodBody.append(String.format(
-                                "this.register(new %s(%s.class,%s.class));",
+                                "$0.register(new %s(%s.class,%s.class));",
                                 ServiceEntry.class.getName(),
                                 service.value().getName(),
                                 component.getClasses().getName()));

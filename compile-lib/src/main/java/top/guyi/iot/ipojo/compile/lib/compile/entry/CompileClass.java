@@ -8,6 +8,7 @@ public class CompileClass {
 
     private CtClass classes;
     private boolean write = true;
+    private boolean component = true;
 
     public CompileClass(CtClass classes) {
         this.classes = classes;
@@ -16,5 +17,10 @@ public class CompileClass {
     public CompileClass(CtClass classes, boolean write) {
         this.classes = classes;
         this.write = write;
+    }
+
+    public CompileClass(boolean component,CtClass classes) {
+        this.classes = classes;
+        this.component = component;
     }
 }

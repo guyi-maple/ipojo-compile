@@ -23,13 +23,18 @@ public class CompileInfo {
     private Map<String,Object> manifestTemplate = Collections.emptyMap();
     private String output;
     private String manifestDirectory = "META-INF";
+    private String version;
+    private String finalName;
+
     private List<String> dependencyExclude = Collections.emptyList();
     private List<String> importPackageExclude = Arrays.asList(
             "^javax.security.*$",
             "^org.osgi.util.*$",
             "org.apache.felix",
             "^net.sf.cglib.*$",
-            "^org.apache.tools.*$"
+            "^org.apache.tools.*$",
+            "^org.osgi.service.metatype$",
+            "^org.osgi.service.cm$"
     );
 
     public void setImportPackageExclude(List<String> exclude){

@@ -19,8 +19,7 @@ public class BaseManifestExpand implements ManifestExpand {
                 new Manifest("Bundle-Name",compileInfo.getName()),
                 new Manifest("Bundle-SymbolicName",Optional
                         .ofNullable(compileInfo.getSymbolicName())
-                        .orElseGet(projectInfo::getArtifactId)),
-                new Manifest("Bundle-Version",projectInfo.getVersion())
+                        .orElseGet(projectInfo::getArtifactId))
         );
     }
 

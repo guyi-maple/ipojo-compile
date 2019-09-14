@@ -71,7 +71,10 @@ public class BundleTypeHandler implements CompileTypeHandler {
             }
         }
         // 注册组件
-        components.forEach(component -> registerMethodBody.append(String.format("$1.register(%s.class);\n", component.getClasses().getName())));
+        components
+                .stream()
+                .filter(CompileClass::isComponent)
+                .forEach(component -> registerMethodBody.append(String.format("$1.register(%s.class);\n", component.getClasses().getName())));
         registerMethodBody.append("}\n");
 
         registerMethod.setBody(registerMethodBody.toString());

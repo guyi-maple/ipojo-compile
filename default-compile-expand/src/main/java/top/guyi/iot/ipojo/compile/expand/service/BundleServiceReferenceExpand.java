@@ -66,7 +66,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
 
     private List<CtMethod> getMethods(CtClass component){
         CtMethod[] ms = component.getDeclaredMethods();
-        return Arrays.stream(component.getDeclaredMethods())
+        return Arrays.stream(component.getMethods())
                 .filter(method -> method.hasAnnotation(BundleServiceReference.class))
                 .collect(Collectors.toList());
     }
@@ -81,7 +81,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
     }
 
     private String invokerMethod(ClassPool pool,CtClass component,CtMethod method,CompileInfo compileInfo) throws NotFoundException, CannotCompileException, IOException {
-        String className = String.format("%s.Invoker%s",compileInfo.getPackageName(), DigestUtils.md5Hex(UUID.randomUUID().toString()));
+        String className = String.format("%s.ServiceReferenceInvoker%s",compileInfo.getPackageName(), DigestUtils.md5Hex(UUID.randomUUID().toString()));
 
         CtClass invoker = pool.makeClass(className);
         invoker.setSuperclass(pool.get(ServiceReferenceInvoker.class.getName()));

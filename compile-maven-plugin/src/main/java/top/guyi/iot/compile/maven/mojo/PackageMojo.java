@@ -29,10 +29,9 @@ public class PackageMojo extends AbstractMojo {
         ZipOutputStream zos = null;
         try {
             File jar = new File(String.format(
-                    "%s/%s-%s.jar",
+                    "%s/%s.jar",
                     this.project.getBuild().getOutputDirectory().replace("classes",""),
-                    this.project.getArtifactId(),
-                    this.project.getVersion()
+                    this.project.getBuild().getFinalName()
             ));
             zos = new ZipOutputStream(new FileOutputStream(jar));
             for (File file : files) {

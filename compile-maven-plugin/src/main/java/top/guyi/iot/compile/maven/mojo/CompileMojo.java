@@ -2,6 +2,7 @@ package top.guyi.iot.compile.maven.mojo;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import top.guyi.iot.ipojo.compile.expand.component.DependencyComponentExpand;
+import top.guyi.iot.ipojo.compile.expand.component.EventExpand;
 import top.guyi.iot.ipojo.compile.expand.manifest.*;
 import top.guyi.iot.ipojo.compile.expand.service.BundleServiceReferenceExpand;
 import top.guyi.iot.ipojo.compile.expand.service.LoggerExpand;
@@ -38,24 +39,32 @@ public class CompileMojo extends AbstractMojo {
     public void execute() {
         try {
             CompileExecutor executor = new CompileExecutor();
-
-            executor.compileExpand(new BundleServiceReferenceExpand());
-            executor.compileExpand(new LoggerExpand());
-            executor.compileExpand(new DependencyComponentExpand());
-            executor.compileExpand(new ServiceRegisterExpand());
-
-            executor.manifestExpand(new BaseManifestExpand());
-            executor.manifestExpand(new ActivatorManifestExpand());
-            executor.manifestExpand(new DependencyManifestExpand());
-            executor.manifestExpand(new TemplateManifestExpand());
-            executor.manifestExpand(new ExportManifestExpand());
-
-            executor.execute(project.getBuild().getOutputDirectory(),this.createProjectInfo());
-
+            this.addExpand(executor);
+            Optional.ofNullable(executor.execute(project.getBuild().getOutputDirectory(),this.createProjectInfo()))
+                    .ifPresent(compileInfo -> this.project.getBuild().setFinalName(
+                            Optional.ofNullable(compileInfo.getFinalName())
+                                    .map(name -> name + "-" + compileInfo.getVersion())
+                                    .orElse(String.format("%s-%s",this.project.getArtifactId(),compileInfo.getVersion()))
+                    ));
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    private void addExpand(CompileExecutor executor){
+        executor.compileExpand(new BundleServiceReferenceExpand());
+        executor.compileExpand(new LoggerExpand());
+        executor.compileExpand(new DependencyComponentExpand());
+        executor.compileExpand(new ServiceRegisterExpand());
+        executor.compileExpand(new EventExpand());
+
+        executor.manifestExpand(new BaseManifestExpand());
+        executor.manifestExpand(new ActivatorManifestExpand());
+        executor.manifestExpand(new DependencyManifestExpand());
+        executor.manifestExpand(new TemplateManifestExpand());
+        executor.manifestExpand(new ExportManifestExpand());
+        executor.manifestExpand(new VersionManifestExpand());
     }
 
     private ProjectInfo createProjectInfo() throws DependencyGraphBuilderException {

@@ -19,9 +19,12 @@ import top.guyi.iot.ipojo.compile.lib.manifest.ManifestWriter;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -33,7 +36,6 @@ public class CompileExecutor {
     private ClassCompiler compiler = new ClassCompiler();
     private ManifestWriter manifestWriter = new ManifestWriter();
 
-    private CompileInfo compileInfo;
     private Map<CompileType, CompileTypeHandler> typeHandlers;
     private List<CompileExpand> compileExpands = new LinkedList<>();
     private List<ManifestExpand> manifestExpands = new LinkedList<>();
@@ -67,6 +69,16 @@ public class CompileExecutor {
         this.typeHandlers.put(bundleTypeHandler.forType(),bundleTypeHandler);
     }
 
+    public CompileInfo getCompileInfo(String path,ProjectInfo projectInfo) throws IOException {
+        File file = Optional.of(new File(path + "/compile.info"))
+                .filter(File::exists)
+                .orElse(new File(projectInfo.getBaseDir() + "/compile.info"));
+        if (file.exists()){
+            return this.gson.fromJson(IOUtils.toString(new FileInputStream(file), StandardCharsets.UTF_8), CompileInfo.class);
+        }
+        return null;
+    }
+
     /**
      * 执行编译
      * @param path 项目Class文件路径
@@ -77,13 +89,8 @@ public class CompileExecutor {
         path = path.endsWith("/") ? path : path + "/";
 
         projectInfo = Optional.ofNullable(projectInfo).orElseGet(ProjectInfo::new);
-
-        File file = Optional.of(new File(path + "/compile.info"))
-                .filter(File::exists)
-                .orElse(new File(projectInfo.getBaseDir() + "/compile.info"));
-        if (file.exists()) {
-            compileInfo = this.gson.fromJson(IOUtils.toString(new FileInputStream(file)), CompileInfo.class);
-
+        CompileInfo compileInfo = this.getCompileInfo(path,projectInfo);
+        if (compileInfo != null){
             if (StringUtils.isEmpty(compileInfo.getOutput())){
                 compileInfo.setOutput(path);
             }
@@ -126,11 +133,9 @@ public class CompileExecutor {
             }
 
             manifestWriter.write(pool,components,compileInfo,projectInfo,this.manifestExpands);
-
-            return compileInfo;
         }
 
-        return null;
+        return compileInfo;
     }
 
 }
