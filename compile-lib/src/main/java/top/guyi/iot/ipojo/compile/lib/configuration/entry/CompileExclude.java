@@ -12,10 +12,6 @@ import java.util.regex.Pattern;
 public class CompileExclude {
 
     @Expose
-    @SerializedName("import")
-    private Set<String> importPackage = Collections.emptySet();
-
-    @Expose
     private Set<String> dependencyCopy = Collections.emptySet();
 
     @Expose
@@ -24,11 +20,6 @@ public class CompileExclude {
 
     @Expose
     private Set<String> dependencyScope = Collections.emptySet();
-
-    public boolean noneImport(String packageName){
-        return this.importPackage.stream()
-                .noneMatch(name -> Pattern.matches(name,packageName));
-    }
 
     public boolean noneExport(String packageName){
         return this.exportPackage.stream()

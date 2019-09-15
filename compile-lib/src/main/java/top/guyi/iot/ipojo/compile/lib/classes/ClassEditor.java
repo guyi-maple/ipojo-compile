@@ -35,10 +35,10 @@ public class ClassEditor {
                 .map(field -> {
                     try {
                         Resource resource = (Resource) field.getAnnotation(Resource.class);
-                        if (StringUtils.isEmpty(resource.value())){
-                            return new FieldEntry(field);
+                        if (StringUtils.isEmpty(resource.name())){
+                            return new FieldEntry(field,resource.equals());
                         }else{
-                            return new FieldEntry(field,resource.value());
+                            return new FieldEntry(field,resource.name(),resource.equals());
                         }
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
@@ -56,32 +56,33 @@ public class ClassEditor {
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
                     try{
-                        if ((!field.getField().getType().isInterface())
-                                && (!Modifier.isAbstract(field.getField().getType().getModifiers()))){
+                        if ((!field.isEquals())
+                                || (field.getField().getType().isInterface())
+                                || (Modifier.isAbstract(field.getField().getType().getModifiers()))){
+                            return String.format(
+                                    "$0.%s((%s) $1.get(%s.class));",
+                                    setMethod.getName(),
+                                    field.getField().getType().getName(),
+                                    field.getField().getType().getName()
+                            );
+                        }
+
+                        if (StringUtils.isEmpty(field.getName())){
                             return String.format(
                                     "$0.%s((%s) $1.get(%s.class,true));",
                                     setMethod.getName(),
                                     field.getField().getType().getName(),
                                     field.getField().getType().getName()
                             );
-                        }else{
-                            if (StringUtils.isEmpty(field.getName())){
-                                return String.format(
-                                        "$0.%s((%s) $1.get(%s.class));",
-                                        setMethod.getName(),
-                                        field.getField().getType().getName(),
-                                        field.getField().getType().getName()
-                                );
-                            }else{
-                                return String.format(
-                                        "$0.%s((%s) $1.get(%s.class,\"%s\"));",
-                                        setMethod.getName(),
-                                        field.getField().getType().getName(),
-                                        field.getField().getType().getName(),
-                                        field.getName()
-                                );
-                            }
                         }
+
+                        return String.format(
+                                "$0.%s((%s) $1.get(%s.class,\"%s\"));",
+                                setMethod.getName(),
+                                field.getField().getType().getName(),
+                                field.getField().getType().getName(),
+                                field.getName()
+                        );
                     }catch (NotFoundException e){
                         e.printStackTrace();
                         return null;

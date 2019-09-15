@@ -2,7 +2,6 @@ package top.guyi.iot.ipojo.compile.expand.manifest;
 
 import javassist.ClassPool;
 import org.apache.commons.io.FileUtils;
-import top.guyi.iot.ipojo.compile.expand.helper.ImportHelper;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
@@ -49,18 +48,6 @@ public class DependencyManifestExpand implements ManifestExpand {
                     manifests.add(manifest);
                 }
             }
-        }
-
-        Set<String> importPackages = ImportHelper
-                .getDependencyImportPackages(compile.getProject().getDependencies())
-                .stream()
-                .filter(packageName -> compile.getExclude().noneImport(packageName))
-                .collect(Collectors.toSet());
-        if (!importPackages.isEmpty()){
-            ListManifest manifest = new ListManifest();
-            manifest.setKey("Import-Package");
-            importPackages.forEach(manifest::add);
-            manifests.add(manifest);
         }
 
         return manifests;
