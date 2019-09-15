@@ -1,9 +1,8 @@
 package top.guyi.iot.ipojo.compile.expand.component;
 
 import javassist.*;
-import org.osgi.framework.BundleContext;
 import top.guyi.iot.ipojo.application.ApplicationContext;
-import top.guyi.iot.ipojo.application.osgi.event.DefaultEventConverter;
+import top.guyi.iot.ipojo.application.osgi.event.interfaces.defaults.DefaultEventConverter;
 import top.guyi.iot.ipojo.application.osgi.event.EventPublisher;
 import top.guyi.iot.ipojo.application.osgi.event.EventRegister;
 import top.guyi.iot.ipojo.application.osgi.event.annotation.ListenEvent;
@@ -12,7 +11,7 @@ import top.guyi.iot.ipojo.application.osgi.event.interfaces.EventConverter;
 import top.guyi.iot.ipojo.application.osgi.event.interfaces.EventListener;
 import top.guyi.iot.ipojo.application.osgi.event.invoker.MethodEventInvoker;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.CompileExpand;
 
 import java.util.HashSet;
@@ -39,22 +38,22 @@ public class EventExpand implements CompileExpand {
     }
 
     @Override
-    public Set<CompileClass> execute(ClassPool pool, String path, CompileInfo compileInfo, Set<CompileClass> components) throws Exception {
-        CtClass register = pool.makeClass(String.format("%s.DefaultEventRegister",compileInfo.getPackageName()));
+    public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
+        CtClass register = pool.makeClass(String.format("%s.DefaultEventRegister", compile.getPackageName()));
         register.setSuperclass(pool.get(EventRegister.class.getName()));
         components.add(new CompileClass(register));
 
         this.setConverter(register,pool,components);
         this.setEventListeners(register,pool,components);
-        this.setMethodEventListeners(register,pool,components,compileInfo);
-        this.setPublisher(pool,components,compileInfo);
+        this.setMethodEventListeners(register,pool,components, compile);
+        this.setPublisher(pool,components, compile);
         return components;
     }
 
-    private void setPublisher(ClassPool pool,Set<CompileClass> components,CompileInfo compileInfo) throws NotFoundException, CannotCompileException {
+    private void setPublisher(ClassPool pool, Set<CompileClass> components, Compile compile) throws NotFoundException, CannotCompileException {
         List<CtClass> converters = this.getConverter(pool,components);
         CtClass superClass = pool.get(EventPublisher.class.getName());
-        CtClass publisher = pool.makeClass(String.format("%s.AutoEventPublisher",compileInfo.getPackageName()));
+        CtClass publisher = pool.makeClass(String.format("%s.AutoEventPublisher", compile.getPackageName()));
         publisher.setSuperclass(superClass);
         CtMethod setMethod = new CtMethod(CtClass.voidType,"setAllEventConverter",new CtClass[0],publisher);
         setMethod.setModifiers(Modifier.PROTECTED);
@@ -98,7 +97,7 @@ public class EventExpand implements CompileExpand {
         setMethod.setBody(setMethodBody.toString());
     }
 
-    private void setMethodEventListeners(CtClass register,ClassPool pool,Set<CompileClass> components,CompileInfo compileInfo) throws NotFoundException, CannotCompileException, ClassNotFoundException {
+    private void setMethodEventListeners(CtClass register, ClassPool pool, Set<CompileClass> components, Compile compile) throws NotFoundException, CannotCompileException, ClassNotFoundException {
         CtMethod setMethod = new CtMethod(CtClass.voidType,"registerAllMethodListener",new CtClass[0],register);
         setMethod.setModifiers(Modifier.PROTECTED);
         register.addMethod(setMethod);
@@ -112,7 +111,7 @@ public class EventExpand implements CompileExpand {
                     CtClass eventClass = pool.get(listenEvent.value().getName());
                     CtClass invoker = pool.makeClass(String.format(
                             "%s.MethodEventInvoker%s",
-                            compileInfo.getPackageName(),
+                            compile.getPackageName(),
                             UUID.randomUUID().toString().replaceAll("-","")));
                     invoker.setSuperclass(pool.get(MethodEventInvoker.class.getName()));
                     this.invokeMethod(

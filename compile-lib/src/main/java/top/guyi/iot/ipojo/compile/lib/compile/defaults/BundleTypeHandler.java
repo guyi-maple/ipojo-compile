@@ -8,13 +8,11 @@ import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
 import javassist.*;
 import org.apache.commons.io.IOUtils;
 import org.osgi.framework.BundleContext;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentInfo;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
-import top.guyi.iot.ipojo.compile.lib.project.entry.Dependency;
-import top.guyi.iot.ipojo.compile.lib.project.configuration.ProjectInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 
-import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.jar.JarFile;
@@ -33,22 +31,21 @@ public class BundleTypeHandler implements CompileTypeHandler {
     private Gson gson = new Gson();
 
     @Override
-    public Set<CompileClass> handle(ClassPool pool, String path, CompileInfo compileInfo, ProjectInfo projectInfo, Set<CompileClass> components) throws Exception {
-        this.createActivator(pool, path, compileInfo,projectInfo, components);
+    public Set<CompileClass> handle(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
+        this.createActivator(pool,compile, components);
         return components;
     }
 
     /**
      * 创建OSGI-Activator
      * @param pool
-     * @param path
-     * @param compileInfo
+     * @param compile
      * @param components
      * @throws Exception
      */
-    private void createActivator(ClassPool pool, String path, CompileInfo compileInfo, ProjectInfo projectInfo, Set<CompileClass> components) throws Exception {
+    private void createActivator(ClassPool pool,Compile compile,Set<CompileClass> components) throws Exception {
         // 创建类对象
-        CtClass activator = pool.makeClass(String.format("%s.Activator", compileInfo.getPackageName()));
+        CtClass activator = pool.makeClass(String.format("%s.Activator", compile.getPackageName()));
         CtMethod registerMethod = new CtMethod(CtClass.voidType, "registerComponent", new CtClass[]{
                 pool.get(ApplicationContext.class.getName()),
                 pool.get(BundleContext.class.getName())
@@ -57,7 +54,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
         activator.setSuperclass(pool.get(DefaultApplicationActivator.class.getName()));
         // 注册支持库组件
         StringBuilder registerMethodBody = new StringBuilder("{\n");
-        for (Dependency dependency : Optional.ofNullable(projectInfo.getDependencies()).orElse(new LinkedHashSet<>())) {
+        for (Dependency dependency : compile.getProject().getDependencies()) {
             JarFile jar = new JarFile(dependency.getPath());
             ZipEntry entry = jar.getEntry("component.info");
             if (entry != null) {
@@ -82,12 +79,12 @@ public class BundleTypeHandler implements CompileTypeHandler {
 
         // 实现getName方法
         CtMethod getNameMethod = new CtMethod(pool.get(String.class.getName()), "getName", new CtClass[0], activator);
-        getNameMethod.setBody(String.format("{return \"%s\";}", compileInfo.getName()));
+        getNameMethod.setBody(String.format("{return \"%s\";}", compile.getProject().getName()));
         activator.addMethod(getNameMethod);
 
         components.add(new CompileClass(activator));
 
-        compileInfo.setActivator(activator.getName());
+        compile.setActivator(activator.getName());
     }
 
 }

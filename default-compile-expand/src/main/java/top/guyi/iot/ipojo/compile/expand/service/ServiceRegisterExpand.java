@@ -8,7 +8,7 @@ import top.guyi.iot.ipojo.application.osgi.service.ServiceRegister;
 import top.guyi.iot.ipojo.application.osgi.service.annotation.Service;
 import top.guyi.iot.ipojo.application.osgi.service.entry.ServiceEntry;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.CompileExpand;
 
 import java.util.Set;
@@ -16,7 +16,7 @@ import java.util.Set;
 public class ServiceRegisterExpand implements CompileExpand {
 
     @Override
-    public Set<CompileClass> execute(ClassPool pool, String path, CompileInfo compileInfo, Set<CompileClass> components) throws Exception {
+    public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
         CtClass register = pool.get(ServiceRegister.class.getName());
         components.add(new CompileClass(register));
 

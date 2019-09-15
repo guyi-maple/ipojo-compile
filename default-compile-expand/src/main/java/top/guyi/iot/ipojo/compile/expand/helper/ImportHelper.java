@@ -1,6 +1,6 @@
 package top.guyi.iot.ipojo.compile.expand.helper;
 
-import top.guyi.iot.ipojo.compile.lib.project.entry.Dependency;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 
 import java.io.*;
 import java.util.*;

@@ -3,11 +3,10 @@ package top.guyi.iot.ipojo.compile.expand.manifest;
 import javassist.ClassPool;
 import top.guyi.iot.ipojo.application.osgi.service.annotation.Service;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.ManifestExpand;
 import top.guyi.iot.ipojo.compile.lib.manifest.Manifest;
 import top.guyi.iot.ipojo.compile.lib.manifest.defaults.ListManifest;
-import top.guyi.iot.ipojo.compile.lib.project.configuration.ProjectInfo;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
 public class ExportManifestExpand implements ManifestExpand {
 
     @Override
-    public List<Manifest> execute(ClassPool pool, Set<CompileClass> components, CompileInfo compileInfo, ProjectInfo projectInfo) {
+    public List<Manifest> execute(ClassPool pool, Set<CompileClass> components, Compile compile) {
         Set<String> packages = components.stream()
                 .map(component -> {
                     try {
@@ -32,6 +31,7 @@ public class ExportManifestExpand implements ManifestExpand {
                     return null;
                 })
                 .filter(Objects::nonNull)
+                .filter(packageName -> compile.getExclude().noneExport(packageName))
                 .collect(Collectors.toSet());
 
         if (packages.isEmpty()){

@@ -1,30 +1,22 @@
 package top.guyi.iot.ipojo.compile.lib.compile;
 
-import com.google.gson.Gson;
-import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.classes.ClassCompiler;
 import top.guyi.iot.ipojo.compile.lib.compile.defaults.BundleTypeHandler;
 import top.guyi.iot.ipojo.compile.lib.compile.defaults.ComponentTypeHandler;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
-import top.guyi.iot.ipojo.compile.lib.project.entry.Dependency;
-import top.guyi.iot.ipojo.compile.lib.project.configuration.ProjectInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
+import top.guyi.iot.ipojo.compile.lib.configuration.parse.CompileFactory;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.expand.CompileExpand;
-import top.guyi.iot.ipojo.compile.lib.compile.exception.CompileInfoFileNotFoundException;
 import javassist.ClassPool;
-import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.compile.lib.expand.ManifestExpand;
 import top.guyi.iot.ipojo.compile.lib.manifest.ManifestWriter;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -32,7 +24,7 @@ import java.util.*;
  */
 public class CompileExecutor {
 
-    private Gson gson = new Gson();
+    private CompileFactory compileFactory = new CompileFactory();
     private ClassCompiler compiler = new ClassCompiler();
     private ManifestWriter manifestWriter = new ManifestWriter();
 
@@ -69,73 +61,53 @@ public class CompileExecutor {
         this.typeHandlers.put(bundleTypeHandler.forType(),bundleTypeHandler);
     }
 
-    public CompileInfo getCompileInfo(String path,ProjectInfo projectInfo) throws IOException {
-        File file = Optional.of(new File(path + "/compile.info"))
-                .filter(File::exists)
-                .orElse(new File(projectInfo.getBaseDir() + "/compile.info"));
-        if (file.exists()){
-            return this.gson.fromJson(IOUtils.toString(new FileInputStream(file), StandardCharsets.UTF_8), CompileInfo.class);
-        }
-        return null;
-    }
-
     /**
      * 执行编译
-     * @param path 项目Class文件路径
+     * @param project 项目信息
      * @throws Exception
      */
-    public CompileInfo execute(String path, ProjectInfo projectInfo) throws Exception {
-        path = path.replace("\\","/");
-        path = path.endsWith("/") ? path : path + "/";
+    public Compile execute(Project project) throws Exception {
+        Compile compile = compileFactory.create(project);
 
-        projectInfo = Optional.ofNullable(projectInfo).orElseGet(ProjectInfo::new);
-        CompileInfo compileInfo = this.getCompileInfo(path,projectInfo);
-        if (compileInfo != null){
-            if (StringUtils.isEmpty(compileInfo.getOutput())){
-                compileInfo.setOutput(path);
-            }
-
-            // 检查编译信息配置是否错误
-            compileInfo.check();
-
+        if (compile != null){
             ClassPool pool = ClassPool.getDefault();
-            pool.appendClassPath(path);
+            pool.appendClassPath(compile.getProject().getWork());
 
             URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
             Method add = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
             add.setAccessible(true);
             // 添加编译期依赖
-            add.invoke(classLoader,new URL(String.format("file:///%s",path)));
-            for (Dependency dependency : projectInfo.getDependencies()) {
+            add.invoke(classLoader,new URL(String.format("file:///%s",compile.getProject().getWork())));
+            for (Dependency dependency : project.getDependencies()) {
                 pool.appendClassPath(dependency.getPath());
                 add.invoke(classLoader,new URL(String.format("file:///%s",dependency.getPath())));
             }
 
             // 获取组件列表
-            Set<CompileClass> components = this.compiler.compile(pool,path);
+            Set<CompileClass> components = this.compiler.compile(pool,compile);
 
             // 执行拓展
             for (CompileExpand expand : this.compileExpands) {
-                components = expand.execute(pool,path, compileInfo,components);
+                components = expand.execute(pool,compile,components);
             }
 
             // 执行编译处理器
-            CompileTypeHandler handler = this.typeHandlers.get(compileInfo.getType());
+            CompileTypeHandler handler = this.typeHandlers.get(compile.getType());
             if (handler != null) {
-                handler.handle(pool,path, compileInfo,projectInfo, components);
+                handler.handle(pool, compile, components);
             }
 
             // 写出类文件
             for (CompileClass component : components) {
                 if (component.isWrite()){
-                    component.getClasses().writeFile(compileInfo.getOutput());
+                    component.getClasses().writeFile(compile.getProject().getOutput());
                 }
             }
 
-            manifestWriter.write(pool,components,compileInfo,projectInfo,this.manifestExpands);
+            manifestWriter.write(pool,components, compile,this.manifestExpands);
         }
 
-        return compileInfo;
+        return compile;
     }
 
 }

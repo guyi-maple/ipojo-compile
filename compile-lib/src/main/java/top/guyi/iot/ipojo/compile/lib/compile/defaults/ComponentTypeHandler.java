@@ -7,10 +7,9 @@ import top.guyi.iot.ipojo.compile.lib.compile.entry.*;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
 import javassist.ClassPool;
 import org.apache.commons.io.IOUtils;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentInfo;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
-import top.guyi.iot.ipojo.compile.lib.project.configuration.ProjectInfo;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -31,17 +30,17 @@ public class ComponentTypeHandler implements CompileTypeHandler {
     private ClassCompiler classCompiler = new ClassCompiler();
 
     @Override
-    public Set<CompileClass> handle(ClassPool pool, String path, CompileInfo compileInfo, ProjectInfo projectInfo, Set<CompileClass> components) throws IOException {
+    public Set<CompileClass> handle(ClassPool pool, Compile compile,Set<CompileClass> components) throws IOException {
         ComponentInfo componentInfo = new ComponentInfo();
 
         componentInfo.setComponents(
-                this.classCompiler.compile(pool,path)
+                this.classCompiler.compile(pool,compile)
                         .stream()
                         .map(component -> new ComponentEntry(component.getClasses().getName()))
                         .collect(Collectors.toSet())
         );
 
-        PrintWriter writer = new PrintWriter(path + "component.info");
+        PrintWriter writer = new PrintWriter(compile.getProject().getOutput() + "/component.info");
         IOUtils.write(this.gson.toJson(componentInfo),writer);
         writer.flush();
         writer.close();

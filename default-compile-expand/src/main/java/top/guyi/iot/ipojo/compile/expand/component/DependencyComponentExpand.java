@@ -5,7 +5,7 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentEntry;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentInfo;
 import top.guyi.iot.ipojo.compile.lib.expand.CompileExpand;
@@ -20,7 +20,7 @@ public class DependencyComponentExpand implements CompileExpand {
     private Gson gson = new Gson();
 
     @Override
-    public Set<CompileClass> execute(ClassPool pool, String path, CompileInfo compileInfo, Set<CompileClass> components) throws Exception {
+    public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
         Enumeration<URL> enumeration = pool.getClassLoader().getResources("component.info");
         while (enumeration.hasMoreElements()){
             String json = IOUtils.toString(enumeration.nextElement().openStream(), StandardCharsets.UTF_8);

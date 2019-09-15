@@ -1,7 +1,9 @@
-package top.guyi.iot.ipojo.compile.lib.project.entry;
+package top.guyi.iot.ipojo.compile.lib.configuration.entry;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
+import java.util.Objects;
 
 @Data
 @AllArgsConstructor
@@ -33,4 +35,16 @@ public class Dependency {
         );
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Dependency that = (Dependency) o;
+        return Objects.equals(getName(), that.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName());
+    }
 }

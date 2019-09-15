@@ -2,8 +2,7 @@ package top.guyi.iot.ipojo.compile.expand.manifest;
 
 import javassist.ClassPool;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
-import top.guyi.iot.ipojo.compile.lib.project.configuration.ProjectInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.ManifestExpand;
 import top.guyi.iot.ipojo.compile.lib.manifest.Manifest;
 import top.guyi.iot.ipojo.compile.lib.manifest.defaults.ListManifest;
@@ -14,8 +13,8 @@ import java.util.stream.Collectors;
 public class TemplateManifestExpand implements ManifestExpand {
 
     @Override
-    public List<Manifest> execute(ClassPool pool, Set<CompileClass> components, CompileInfo compileInfo, ProjectInfo projectInfo) {
-        return compileInfo.getManifestTemplate().entrySet().stream()
+    public List<Manifest> execute(ClassPool pool, Set<CompileClass> components, Compile compile) {
+        return compile.getManifestTemplate().entrySet().stream()
                 .map(this::convert)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

@@ -3,7 +3,7 @@ package top.guyi.iot.ipojo.compile.expand.service;
 import top.guyi.iot.ipojo.application.osgi.log.Log;
 import top.guyi.iot.ipojo.application.osgi.log.AbstractLoggerRepository;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.expand.CompileExpand;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
@@ -15,8 +15,8 @@ import java.util.Set;
 public class LoggerExpand implements CompileExpand {
 
     @Override
-    public Set<CompileClass> execute(ClassPool pool, String path, CompileInfo compileInfo, Set<CompileClass> components) throws Exception {
-        if (compileInfo.getType() == CompileType.COMPONENT){
+    public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
+        if (compile.getType() == CompileType.COMPONENT){
             return components;
         }
 

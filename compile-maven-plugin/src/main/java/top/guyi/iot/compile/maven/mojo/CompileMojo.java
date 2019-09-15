@@ -8,7 +8,7 @@ import top.guyi.iot.ipojo.compile.expand.service.BundleServiceReferenceExpand;
 import top.guyi.iot.ipojo.compile.expand.service.LoggerExpand;
 import top.guyi.iot.ipojo.compile.expand.service.ServiceRegisterExpand;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileExecutor;
-import top.guyi.iot.ipojo.compile.lib.project.entry.Dependency;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Component;
@@ -20,7 +20,7 @@ import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
-import top.guyi.iot.ipojo.compile.lib.project.configuration.ProjectInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,11 +40,11 @@ public class CompileMojo extends AbstractMojo {
         try {
             CompileExecutor executor = new CompileExecutor();
             this.addExpand(executor);
-            Optional.ofNullable(executor.execute(project.getBuild().getOutputDirectory(),this.createProjectInfo()))
-                    .ifPresent(compileInfo -> this.project.getBuild().setFinalName(
-                            Optional.ofNullable(compileInfo.getFinalName())
-                                    .map(name -> name + "-" + compileInfo.getVersion())
-                                    .orElse(String.format("%s-%s",this.project.getArtifactId(),compileInfo.getVersion()))
+            Optional.ofNullable(executor.execute(this.createProjectInfo()))
+                    .ifPresent(compile -> this.project.getBuild().setFinalName(
+                            Optional.ofNullable(compile.getProject().getFinalName())
+                                    .map(name -> name + "-" + compile.getProject().getVersion())
+                                    .orElse(String.format("%s-%s",this.project.getArtifactId(),compile.getProject().getVersion()))
                     ));
         } catch (Exception e) {
             e.printStackTrace();
@@ -64,17 +64,18 @@ public class CompileMojo extends AbstractMojo {
         executor.manifestExpand(new DependencyManifestExpand());
         executor.manifestExpand(new TemplateManifestExpand());
         executor.manifestExpand(new ExportManifestExpand());
-        executor.manifestExpand(new VersionManifestExpand());
     }
 
-    private ProjectInfo createProjectInfo() throws DependencyGraphBuilderException {
-        ProjectInfo projectInfo = new ProjectInfo();
-        projectInfo.setGroupId(this.project.getGroupId());
-        projectInfo.setArtifactId(this.project.getArtifactId());
-        projectInfo.setVersion(this.project.getVersion());
-        projectInfo.setDependencies(this.getDependency());
-        projectInfo.setBaseDir(this.project.getBasedir().getAbsolutePath());
-        return projectInfo;
+    private Project createProjectInfo() throws DependencyGraphBuilderException {
+        Project project = new Project();
+        project.setName(this.project.getArtifactId());
+        project.setGroupId(this.project.getGroupId());
+        project.setArtifactId(this.project.getArtifactId());
+        project.setVersion(this.project.getVersion());
+        project.setDependencies(this.getDependency());
+        project.setBaseDir(this.project.getBasedir().getAbsolutePath());
+        project.setWork(this.project.getBuild().getOutputDirectory());
+        return project;
     }
 
     private Set<Dependency> getDependency() throws DependencyGraphBuilderException {

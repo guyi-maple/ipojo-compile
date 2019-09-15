@@ -2,8 +2,7 @@ package top.guyi.iot.ipojo.compile.lib.manifest;
 
 import javassist.ClassPool;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
-import top.guyi.iot.ipojo.compile.lib.configuration.CompileInfo;
-import top.guyi.iot.ipojo.compile.lib.project.configuration.ProjectInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.ManifestExpand;
 import top.guyi.iot.ipojo.compile.lib.manifest.defaults.ListManifest;
 
@@ -16,14 +15,21 @@ import java.util.stream.Collectors;
 
 public class ManifestWriter {
 
-    public void write(ClassPool pool, Set<CompileClass> components, CompileInfo compileInfo, ProjectInfo projectInfo, List<ManifestExpand> expands){
+    public void write(ClassPool pool, Set<CompileClass> components, Compile compile, List<ManifestExpand> expands){
         try {
-            String directory = compileInfo.getOutput() + "/" + compileInfo.getManifestDirectory();
+            String directory = compile.getProject().getOutput() + "/META-INF";
             if (new File(directory).mkdirs()){
                 PrintWriter writer = new PrintWriter(directory + "/MANIFEST.MF");
 
                 expands.stream()
-                        .map(expand -> expand.execute(pool,components,compileInfo,projectInfo))
+                        .map(expand -> {
+                            try {
+                                return expand.execute(pool,components, compile);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            return null;
+                        })
                         .filter(Objects::nonNull)
                         .flatMap(Collection::stream)
                         .collect(Collectors.toMap(

@@ -4,6 +4,7 @@ import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.NotFoundException;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 
 import java.util.Objects;
 import java.util.Set;
@@ -14,8 +15,8 @@ public class ClassCompiler {
     private ClassScanner scanner = new ClassScanner();
     private ClassEditor editor = new ClassEditor();
 
-    public Set<CompileClass> compile(ClassPool pool, String path) {
-        return this.scanner.getComponent(pool,path)
+    public Set<CompileClass> compile(ClassPool pool, Compile compile) {
+        return this.scanner.getComponent(pool,compile.getProject().getWork())
                 .stream()
                 .map(component -> {
                     try {
