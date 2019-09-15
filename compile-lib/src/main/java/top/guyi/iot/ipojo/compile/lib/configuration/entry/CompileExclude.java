@@ -22,6 +22,9 @@ public class CompileExclude {
     @SerializedName("export")
     private Set<String> exportPackage = Collections.emptySet();
 
+    @Expose
+    private Set<String> dependencyScope = Collections.emptySet();
+
     public boolean noneImport(String packageName){
         return this.importPackage.stream()
                 .noneMatch(name -> Pattern.matches(name,packageName));
@@ -36,6 +39,11 @@ public class CompileExclude {
         String name = dependency.getName();
         return this.dependencyCopy.stream()
                 .noneMatch(dependencyName -> Pattern.matches(dependencyName,name));
+    }
+
+    public boolean noneDependencyScope(Dependency dependency){
+        return this.dependencyScope.stream()
+                .noneMatch(scope -> Pattern.matches(scope,dependency.getScope()));
     }
 
 }

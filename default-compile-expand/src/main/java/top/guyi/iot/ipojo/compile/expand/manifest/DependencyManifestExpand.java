@@ -26,6 +26,7 @@ public class DependencyManifestExpand implements ManifestExpand {
             Set<Dependency> dependencies = compile.getProject().getDependencies()
                     .stream()
                     .filter(dependency -> compile.getExclude().noneDependencyCopy(dependency))
+                    .filter(dependency -> compile.getExclude().noneDependencyScope(dependency))
                     .collect(Collectors.toSet());
 
             if (!dependencies.isEmpty()){

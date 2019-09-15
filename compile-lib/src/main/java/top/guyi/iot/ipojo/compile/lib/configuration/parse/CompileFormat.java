@@ -13,6 +13,12 @@ public class CompileFormat {
     private static final String ValueName = "value";
     private static Gson gson = new Gson();
 
+    private static boolean noSerial(Class<?> type){
+        return !String.class.isAssignableFrom(type)
+                && !Number.class.isAssignableFrom(type)
+                && !Boolean.class.isAssignableFrom(type);
+    }
+
     private static String getFieldName(Method method){
         String name = method.getName().substring(3);
         if (name.length() == 1){
@@ -22,7 +28,12 @@ public class CompileFormat {
     }
 
     public static Compile format(Map<String,Object> configuration){
-        Arrays.stream(Compile.class.getMethods())
+        String json = gson.toJson(formatMap(Compile.class,configuration));
+        return gson.fromJson(json,Compile.class);
+    }
+
+    private static Map<String,Object> formatMap(Class<?> classes,Map<String,Object> configuration){
+        Arrays.stream(classes.getMethods())
                 .filter(method -> method.getName().startsWith("set"))
                 .map(method -> {
                     if (method.getParameterCount() != 1){
@@ -52,14 +63,16 @@ public class CompileFormat {
                                     value = getMap(value);
                                 }else if (List.class.isAssignableFrom(type)){
                                     value = getList(value);
+                                }else if (Set.class.isAssignableFrom(type)){
+                                    value = getSet(value);
                                 }else {
-                                    value = getObject(value);
+                                    value = getObject(type,value);
                                 }
                                 configuration.put(fieldName,value);
                             });
                 });
-        String json = gson.toJson(configuration);
-        return gson.fromJson(json,Compile.class);
+
+        return configuration;
     }
 
     private static Map<String,Object> getMap(Object value){
@@ -99,11 +112,40 @@ public class CompileFormat {
         return list;
     }
 
-    private static Object getObject(Object value){
+    private static Set<Object> getSet(Object value){
+        Set<Object> set = new HashSet<>();
         if (value instanceof Map){
             if (((Map) value).containsKey(ValueName)){
                 Object content = ((Map) value).get(ValueName);
-                return getObject(content);
+                set = getSet(content);
+            }else{
+                set.add(value);
+            }
+            return set;
+        }
+
+        if (value instanceof Set){
+            set.addAll((Set) value);
+            return set;
+        }
+
+        if (value instanceof List){
+            set.addAll((List) value);
+            return set;
+        }
+
+        set.add(value);
+        return set;
+    }
+
+    private static Object getObject(Class<?> type,Object value){
+        if (value instanceof Map){
+            if (noSerial(type)){
+                return formatMap(type,(Map<String, Object>) value);
+            }
+            if (((Map) value).containsKey(ValueName)){
+                Object content = ((Map) value).get(ValueName);
+                return getObject(type,content);
             }
             return value;
         }

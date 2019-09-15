@@ -91,6 +91,7 @@ public class CompileMojo extends AbstractMojo {
                 .map(DependencyNode::getArtifact)
                 .filter(artifact -> !(artifact.getArtifactId().equals(project.getArtifactId())
                         && artifact.getGroupId().equals(project.getGroupId())))
+                .filter(artifact -> !"scope".equals(artifact.getScope()))
                 .map(artifact -> new Dependency(
                         repository,
                         artifact.getGroupId(),
