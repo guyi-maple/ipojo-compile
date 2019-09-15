@@ -1,5 +1,6 @@
 package top.guyi.iot.ipojo.compile.lib.configuration.entry;
 
+import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 
@@ -10,9 +11,14 @@ import java.util.regex.Pattern;
 @Data
 public class CompileExclude {
 
+    @Expose
     @SerializedName("import")
     private Set<String> importPackage = Collections.emptySet();
+
+    @Expose
     private Set<String> dependencyCopy = Collections.emptySet();
+
+    @Expose
     @SerializedName("export")
     private Set<String> exportPackage = Collections.emptySet();
 

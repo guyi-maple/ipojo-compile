@@ -15,9 +15,10 @@ public class BaseManifestExpand implements ManifestExpand {
         return Arrays.asList(
                 new Manifest("Manifest-Version","1.0"),
                 new Manifest("Bundle-ManifestVersion","2"),
-                new Manifest("Bundle-Name", compile.getProject().getName()),
-                new Manifest("Bundle-SymbolicName",compile.getProject().getSymbolicName()),
-                new Manifest("Bundle-Version",compile.getProject().getVersion())
+                new Manifest("Bundle-Name", compile.getName()),
+                new Manifest("Bundle-SymbolicName",compile.getSymbolicName()),
+                new Manifest("Bundle-Version",compile.getProject().getVersion()),
+                new Manifest("Private-Package",compile.getPackageName())
         );
     }
 

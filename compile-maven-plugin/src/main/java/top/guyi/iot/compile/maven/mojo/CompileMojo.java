@@ -40,7 +40,7 @@ public class CompileMojo extends AbstractMojo {
         try {
             CompileExecutor executor = new CompileExecutor();
             this.addExpand(executor);
-            Optional.ofNullable(executor.execute(this.createProjectInfo()))
+            executor.execute(this.createProjectInfo())
                     .ifPresent(compile -> this.project.getBuild().setFinalName(
                             Optional.ofNullable(compile.getProject().getFinalName())
                                     .map(name -> name + "-" + compile.getProject().getVersion())
@@ -68,7 +68,6 @@ public class CompileMojo extends AbstractMojo {
 
     private Project createProjectInfo() throws DependencyGraphBuilderException {
         Project project = new Project();
-        project.setName(this.project.getArtifactId());
         project.setGroupId(this.project.getGroupId());
         project.setArtifactId(this.project.getArtifactId());
         project.setVersion(this.project.getVersion());

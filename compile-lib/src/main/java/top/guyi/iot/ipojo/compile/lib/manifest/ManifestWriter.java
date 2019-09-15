@@ -21,6 +21,7 @@ public class ManifestWriter {
             if (new File(directory).mkdirs()){
                 PrintWriter writer = new PrintWriter(directory + "/MANIFEST.MF");
 
+                Map<String,Object> compileManifest = new HashMap<>();
                 expands.stream()
                         .map(expand -> {
                             try {
@@ -36,7 +37,19 @@ public class ManifestWriter {
                                 Manifest::getKey,
                                 Function.identity(),
                                 this::merge))
-                        .forEach((key,value) -> writer.println(String.format("%s: %s",key,value.getValue())));
+                        .values()
+                        .stream()
+                        .peek(manifest -> {
+                            if (manifest instanceof ListManifest){
+                                compileManifest.put(manifest.getKey(),((ListManifest) manifest).getList());
+                            }else{
+                                compileManifest.put(manifest.getKey(),manifest.getValue());
+                            }
+                        })
+                        .forEach(manifest -> writer.println(String.format("%s: %s",manifest.getKey(),manifest.getValue())));
+
+                compile.setManifestTemplate(compileManifest);
+
                 writer.flush();
                 writer.close();
             }

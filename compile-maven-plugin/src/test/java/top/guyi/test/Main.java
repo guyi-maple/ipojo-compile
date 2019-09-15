@@ -12,26 +12,35 @@ import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
         Project project = new Project();
-        project.setName("ipojo-test");
-        project.setArtifactId(project.getName());
+        project.setArtifactId("ipojo-test");
         project.setVersion("1.0.0.0");
         project.setGroupId("top.guyi.test");
         project.setBaseDir("/Users/guyi/Documents/Work/Java/ipojo-group/ipojo-test");
         project.setWork("/Users/guyi/Documents/Work/Java/ipojo-group/ipojo-test/target/classes");
-        project.setOutput(project.getWork() + "/compile");
-        Dependency dependency = new Dependency(
+        project.setOutput("/Users/guyi/Documents/Work/Java/ipojo-group/ipojo-test/target/compile");
+        Set<Dependency> dependencies = new HashSet<>();
+        dependencies.add(new Dependency(
                 "/Users/guyi/.m2/repository",
                 "top.guyi.iot.ipojo",
                 "ipojo",
                 "1.3.0.0",
                 "compile"
-        );
-        project.setDependencies(Collections.singleton(dependency));
+        ));
+        dependencies.add(new Dependency(
+                "/Users/guyi/.m2/repository",
+                "top.guyi.test.extend",
+                "ipojo-extend-test",
+                "1.0.0.0",
+                "compile"
+        ));
+        project.setDependencies(dependencies);
 
         CompileExecutor executor = new CompileExecutor();
         executor.compileExpand(new BundleServiceReferenceExpand());
@@ -39,14 +48,14 @@ public class Main {
         executor.compileExpand(new DependencyComponentExpand());
         executor.compileExpand(new ServiceRegisterExpand());
         executor.compileExpand(new EventExpand());
+
         executor.manifestExpand(new BaseManifestExpand());
         executor.manifestExpand(new ActivatorManifestExpand());
         executor.manifestExpand(new DependencyManifestExpand());
         executor.manifestExpand(new TemplateManifestExpand());
         executor.manifestExpand(new ExportManifestExpand());
 
-        Compile compile = executor.execute(project);
-        System.out.println(compile);
+        executor.execute(project);
     }
 
 }

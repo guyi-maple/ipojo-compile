@@ -79,7 +79,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
 
         // 实现getName方法
         CtMethod getNameMethod = new CtMethod(pool.get(String.class.getName()), "getName", new CtClass[0], activator);
-        getNameMethod.setBody(String.format("{return \"%s\";}", compile.getProject().getName()));
+        getNameMethod.setBody(String.format("{return \"%s\";}", compile.getName()));
         activator.addMethod(getNameMethod);
 
         components.add(new CompileClass(activator));

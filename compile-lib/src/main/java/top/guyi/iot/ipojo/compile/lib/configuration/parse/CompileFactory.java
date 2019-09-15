@@ -1,7 +1,9 @@
 package top.guyi.iot.ipojo.compile.lib.configuration.parse;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.exception.CompileInfoCheckException;
@@ -32,6 +34,7 @@ public class CompileFactory {
         Compile compile = this.create(file,project);
         compile.setType(Optional.ofNullable(compile.getType()).orElse(CompileType.COMPONENT));
         compile.getProject().extend(project);
+
         return compile;
     }
 
@@ -40,13 +43,19 @@ public class CompileFactory {
             return null;
         }
         Map<String,Object> configuration = getConfiguration(IOUtils.toString(new FileInputStream(file), StandardCharsets.UTF_8));
-        configuration = getExtendConfiguration(configuration,getAllConfiguration(project.getDependencies()));
+        if (StringUtils.isEmpty(configuration.getOrDefault("package","").toString())){
+            throw new CompileInfoCheckException("package");
+        }
+        if (StringUtils.isEmpty(configuration.getOrDefault("name","").toString())){
+            throw new CompileInfoCheckException("name");
+        }
+
+        getExtendConfiguration(configuration,getAllConfiguration(project.getDependencies()));
 
         Compile compile = CompileFormat.format(configuration);
         if (StringUtils.isEmpty(compile.getPackageName())){
             throw new CompileInfoCheckException("packageName");
         }
-
         return compile;
     }
 
@@ -82,23 +91,35 @@ public class CompileFactory {
         return configuration.getOrDefault("name","ipojo-bundle").toString();
     }
 
-    private Optional<String> getParentName(Map<String,Object> configuration){
-        Optional<String> parent = Optional.ofNullable(configuration.get("parent"))
-                .map(Object::toString);
-        if (!parent.isPresent() && !"ipojo".equals(this.getName(configuration))){
-            return Optional.of("ipojo");
-        }
-        return parent;
+    private Set<String> getExtendNames(Map<String,Object> configuration){
+        Set<String> extendsName = Optional.ofNullable(configuration.get("extends"))
+                .map(value -> {
+                    if (value instanceof List){
+                        return new HashSet<>((List<String>)value);
+                    }else if ((value instanceof Boolean) && !((Boolean)value)){
+                        return new HashSet<String>();
+                    }else{
+                        return new HashSet<>(Arrays.asList(value.toString().split(",")));
+                    }
+                })
+                .orElseGet(() -> {
+                    if (!"ipojo".equals(configuration.get("name"))){
+                        return new HashSet<>(Collections.singleton("ipojo"));
+                    }else{
+                        return new HashSet<>();
+                    }
+                });
+        configuration.put("extends",extendsName);
+        return extendsName;
     }
 
     private Map<String,Object> getExtendConfiguration(Map<String,Object> configuration,Map<String,Map<String,Object>> configurations){
-        this.getParentName(configuration)
-                .flatMap(parent -> Optional.ofNullable(configurations.get(parent)))
-                .ifPresent(parentConfiguration ->
-                        getExtendConfiguration(parentConfiguration, configurations).forEach((key, value) ->
-                                configuration.put(key, ExtendFieldFactory.extend(value, configuration.get(key)))
-                        )
-                );
+        this.getExtendNames(configuration)
+                .stream()
+                .map(configurations::get)
+                .filter(Objects::nonNull)
+                .forEach(extend ->
+                        extend.forEach((key,value) -> configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)))));
         return configuration;
     }
 

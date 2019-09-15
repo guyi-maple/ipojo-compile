@@ -1,5 +1,8 @@
 package top.guyi.iot.ipojo.compile.lib.compile;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.apache.commons.io.FileUtils;
 import top.guyi.iot.ipojo.compile.lib.classes.ClassCompiler;
 import top.guyi.iot.ipojo.compile.lib.compile.defaults.BundleTypeHandler;
 import top.guyi.iot.ipojo.compile.lib.compile.defaults.ComponentTypeHandler;
@@ -14,9 +17,11 @@ import javassist.ClassPool;
 import top.guyi.iot.ipojo.compile.lib.expand.ManifestExpand;
 import top.guyi.iot.ipojo.compile.lib.manifest.ManifestWriter;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -66,7 +71,7 @@ public class CompileExecutor {
      * @param project 项目信息
      * @throws Exception
      */
-    public Compile execute(Project project) throws Exception {
+    public Optional<Compile> execute(Project project) throws Exception {
         Compile compile = compileFactory.create(project);
 
         if (compile != null){
@@ -105,9 +110,18 @@ public class CompileExecutor {
             }
 
             manifestWriter.write(pool,components, compile,this.manifestExpands);
-        }
 
-        return compile;
+            Gson gson = new GsonBuilder()
+                    .setPrettyPrinting()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .create();
+            FileUtils.write(
+                    new File(compile.getProject().getOutput() + "/compile.info"),
+                    gson.toJson(compile),
+                    StandardCharsets.UTF_8
+            );
+        }
+        return Optional.ofNullable(compile);
     }
 
 }

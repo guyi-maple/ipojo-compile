@@ -16,8 +16,6 @@ public class Project {
     private String work;
     private String output;
 
-    private String name;
-    private String symbolicName;
     private String finalName;
     private String version;
     private String groupId;
@@ -35,18 +33,11 @@ public class Project {
         return Optional.ofNullable(this.output).orElse(this.work);
     }
 
-    public String getSymbolicName(){
-        return Optional.ofNullable(this.symbolicName).orElse(this.name);
-    }
-
     public void extend(Project project){
         this.work = project.work;
         this.baseDir = project.baseDir;
         this.sourceDir = project.sourceDir;
 
-        if (StringUtils.isEmpty(name)){
-            this.name = project.name;
-        }
         if (StringUtils.isEmpty(output)){
             this.output = project.output;
         }
