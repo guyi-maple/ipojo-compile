@@ -59,7 +59,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
 
         listener.addMethod(registerAll);
 
-        components.add(new CompileClass(listener));
+        components.add(new CompileClass("AutoDefaultBundleServiceListener",listener,true,true,false,1000));
 
         return components;
     }

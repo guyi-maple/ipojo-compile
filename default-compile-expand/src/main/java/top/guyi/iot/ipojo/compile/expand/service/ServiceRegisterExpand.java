@@ -17,10 +17,11 @@ public class ServiceRegisterExpand implements CompileExpand {
 
     @Override
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
-        CtClass register = pool.get(ServiceRegister.class.getName());
-        components.add(new CompileClass(register));
+        CtClass register = pool.makeClass(String.format("%s.DefaultAutoServiceRegister",compile.getPackageName()));
+        register.setSuperclass(pool.get(ServiceRegister.class.getName()));
+        components.add(new CompileClass(register,true,true,false));
 
-        CtMethod method = register.getDeclaredMethod("registerAll",new CtClass[0]);
+        CtMethod method = new CtMethod(CtClass.voidType,"registerAll",new CtClass[0],register);
         method.setModifiers(Modifier.PROTECTED);
         StringBuffer methodBody = new StringBuffer("{");
         components.stream()
@@ -39,6 +40,7 @@ public class ServiceRegisterExpand implements CompileExpand {
                 });
         methodBody.append("}");
         method.setBody(methodBody.toString());
+        register.addMethod(method);
 
         return components;
     }

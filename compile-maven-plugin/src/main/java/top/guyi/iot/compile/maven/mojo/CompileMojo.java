@@ -3,6 +3,7 @@ package top.guyi.iot.compile.maven.mojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import top.guyi.iot.ipojo.compile.expand.component.DependencyComponentExpand;
 import top.guyi.iot.ipojo.compile.expand.component.EventExpand;
+import top.guyi.iot.ipojo.compile.expand.configuration.ConfigurationExpand;
 import top.guyi.iot.ipojo.compile.expand.manifest.*;
 import top.guyi.iot.ipojo.compile.expand.service.BundleServiceReferenceExpand;
 import top.guyi.iot.ipojo.compile.expand.service.LoggerExpand;
@@ -58,6 +59,7 @@ public class CompileMojo extends AbstractMojo {
         executor.compileExpand(new DependencyComponentExpand());
         executor.compileExpand(new ServiceRegisterExpand());
         executor.compileExpand(new EventExpand());
+        executor.compileExpand(new ConfigurationExpand());
 
         executor.manifestExpand(new BaseManifestExpand());
         executor.manifestExpand(new ActivatorManifestExpand());

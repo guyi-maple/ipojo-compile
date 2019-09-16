@@ -41,7 +41,7 @@ public class EventExpand implements CompileExpand {
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
         CtClass register = pool.makeClass(String.format("%s.DefaultEventRegister", compile.getPackageName()));
         register.setSuperclass(pool.get(EventRegister.class.getName()));
-        components.add(new CompileClass(register));
+        components.add(new CompileClass("DefaultEventRegister",register,true,true,false,998));
 
         this.setConverter(register,pool,components);
         this.setEventListeners(register,pool,components);

@@ -1,22 +1,16 @@
 package top.guyi.iot.ipojo.compile.lib.compile.defaults;
 
-import com.google.gson.Gson;
 import top.guyi.iot.ipojo.application.ApplicationContext;
+import top.guyi.iot.ipojo.application.bean.ComponentInfo;
 import top.guyi.iot.ipojo.application.osgi.DefaultApplicationActivator;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.*;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
 import javassist.*;
-import org.apache.commons.io.IOUtils;
 import org.osgi.framework.BundleContext;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
-import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentInfo;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
-import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 
-import java.util.Optional;
 import java.util.Set;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
 
 /**
  * Bundle编译处理器
@@ -27,8 +21,6 @@ public class BundleTypeHandler implements CompileTypeHandler {
     public CompileType forType() {
         return CompileType.BUNDLE;
     }
-
-    private Gson gson = new Gson();
 
     @Override
     public Set<CompileClass> handle(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
@@ -52,26 +44,29 @@ public class BundleTypeHandler implements CompileTypeHandler {
         }, activator);
         // 继承拓展抽象类
         activator.setSuperclass(pool.get(DefaultApplicationActivator.class.getName()));
-        // 注册支持库组件
         StringBuilder registerMethodBody = new StringBuilder("{\n");
-        for (Dependency dependency : compile.getProject().getDependencies()) {
-            JarFile jar = new JarFile(dependency.getPath());
-            ZipEntry entry = jar.getEntry("component.info");
-            if (entry != null) {
-                ComponentInfo componentInfo = this.gson.fromJson(IOUtils.toString(jar.getInputStream(entry)), ComponentInfo.class);
-                Optional.ofNullable(componentInfo.getComponents())
-                        .ifPresent(componentEntries -> componentEntries.forEach(component -> {
-                            if ("classes".equals(component.getType())) {
-                                registerMethodBody.append(String.format("$1.register(%s.class);\n", component.getClasses()));
-                            }
-                        }));
-            }
-        }
+
+//        // 注册支持库组件
+//        for (Dependency dependency : compile.getProject().getDependencies()) {
+//            JarFile jar = new JarFile(dependency.getPath());
+//            ZipEntry entry = jar.getEntry("component.info");
+//            if (entry != null) {
+//                ComponentInfo componentInfo = this.gson.fromJson(
+//                        IOUtils.toString(jar.getInputStream(entry), StandardCharsets.UTF_8), ComponentInfo.class);
+//                Optional.ofNullable(componentInfo.getComponents())
+//                        .ifPresent(componentEntries -> componentEntries.forEach(component -> {
+//                            if ("classes".equals(component.getType())) {
+//                                registerMethodBody.append(this.getRegisterMethod(component));
+//                            }
+//                        }));
+//            }
+//        }
+
         // 注册组件
         components
                 .stream()
                 .filter(CompileClass::isComponent)
-                .forEach(component -> registerMethodBody.append(String.format("$1.register(%s.class);\n", component.getClasses().getName())));
+                .forEach(component -> registerMethodBody.append(this.getRegisterMethod(component)));
         registerMethodBody.append("}\n");
 
         registerMethod.setBody(registerMethodBody.toString());
@@ -85,6 +80,17 @@ public class BundleTypeHandler implements CompileTypeHandler {
         components.add(new CompileClass(activator));
 
         compile.setActivator(activator.getName());
+    }
+
+    private String getRegisterMethod(CompileClass component){
+        return String.format(
+                "$1.register().put(%s.class,new %s(\"%s\",%s,%s));\n",
+                component.getClasses().getName(),
+                ComponentInfo.class.getName(),
+                component.getName(),
+                component.getOrder(),
+                component.isProxy()
+        );
     }
 
 }

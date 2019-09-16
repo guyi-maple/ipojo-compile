@@ -27,7 +27,7 @@ public class DependencyComponentExpand implements CompileExpand {
             ComponentInfo componentInfo = this.gson.fromJson(json,ComponentInfo.class);
             for (ComponentEntry component : componentInfo.getComponents()) {
                 CtClass classes = pool.get(component.getClasses());
-                components.add(new CompileClass(classes,false));
+                components.add(new CompileClass(classes,false,true,component.isProxy()));
             }
         }
         return components;

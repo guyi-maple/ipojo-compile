@@ -3,6 +3,7 @@ package top.guyi.iot.ipojo.compile.lib.classes;
 import top.guyi.iot.ipojo.application.annotation.Component;
 import javassist.ClassPool;
 import javassist.NotFoundException;
+import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 
 import java.io.File;
@@ -50,7 +51,23 @@ public class ClassScanner {
     public Set<CompileClass> getComponent(ClassPool pool,String path){
         return this.scan(pool,path)
                 .stream()
-                .filter(compile -> compile.getClasses().hasAnnotation(Component.class))
+                .map(compile -> {
+                    try {
+                        Component component = (Component) compile.getClasses().getAnnotation(Component.class);
+                        if (component != null){
+                            compile.setProxy(component.proxy());
+                            compile.setOrder(component.order());
+                            if (!StringUtils.isEmpty(component.name())){
+                                compile.setName(component.name());
+                            }
+                            return compile;
+                        }
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 

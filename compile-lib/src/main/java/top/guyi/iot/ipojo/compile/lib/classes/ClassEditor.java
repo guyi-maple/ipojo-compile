@@ -35,10 +35,12 @@ public class ClassEditor {
                 .map(field -> {
                     try {
                         Resource resource = (Resource) field.getAnnotation(Resource.class);
-                        if (StringUtils.isEmpty(resource.name())){
-                            return new FieldEntry(field,resource.equals());
-                        }else{
-                            return new FieldEntry(field,resource.name(),resource.equals());
+                        if (resource != null){
+                            if (StringUtils.isEmpty(resource.name())){
+                                return new FieldEntry(field,resource.equals());
+                            }else{
+                                return new FieldEntry(field,resource.name(),resource.equals());
+                            }
                         }
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
