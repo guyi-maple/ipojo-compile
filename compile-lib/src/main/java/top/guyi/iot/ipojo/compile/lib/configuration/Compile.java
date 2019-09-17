@@ -40,7 +40,7 @@ public class Compile {
     private Project project = new Project();
 
     @Expose
-    private CompileExclude exclude;
+    private CompileExclude exclude = new CompileExclude();
 
     public String getSymbolicName(){
         return Optional.ofNullable(this.symbolicName).orElse(this.name);

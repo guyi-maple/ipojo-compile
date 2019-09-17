@@ -8,9 +8,7 @@ import top.guyi.iot.ipojo.compile.lib.classes.entry.FieldEntry;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
 import javassist.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ClassEditor {
@@ -30,8 +28,30 @@ public class ClassEditor {
         return this.componentInterfaceClass;
     }
 
-    public List<FieldEntry> getFields(CtClass classes){
-        return Arrays.stream(classes.getDeclaredFields())
+    private Map<String,CtField> listField(CtClass stopClass,CtClass classes,Map<String,CtField> fields){
+        List<CtField> fieldList = new LinkedList<>();
+        fieldList.addAll(Arrays.asList(classes.getDeclaredFields()));
+        fieldList.addAll(Arrays.asList(classes.getFields()));
+        fieldList
+                .stream()
+                .filter(field -> !fields.containsKey(field.getName()))
+                .forEach(field -> fields.put(field.getName(),field));
+
+        try {
+            CtClass superClass = classes.getSuperclass();
+            if (!superClass.getName().equals(stopClass.getName())){
+                return this.listField(stopClass,superClass,fields);
+            }
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return fields;
+    }
+
+    public List<FieldEntry> getFields(CtClass stopClass,CtClass classes){
+        return this.listField(stopClass,classes,new HashMap<>()).values()
+                .stream()
                 .map(field -> {
                     try {
                         Resource resource = (Resource) field.getAnnotation(Resource.class);
@@ -51,9 +71,9 @@ public class ClassEditor {
                 .collect(Collectors.toList());
     }
 
-    public String getInjectMethodBody(CtClass classes){
+    public String getInjectMethodBody(ClassPool pool,CtClass classes) throws NotFoundException {
         StringBuffer sb = new StringBuffer("{");
-        this.getFields(classes)
+        this.getFields(pool.get(Object.class.getName()),classes)
                 .stream()
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
@@ -102,7 +122,7 @@ public class ClassEditor {
         }catch (NotFoundException e){
             classes.addInterface(this.getComponentInterfaceClass(pool));
             CtMethod method = new CtMethod(CtClass.voidType,"inject",new CtClass[]{this.getApplicationClass(pool)},classes);
-            method.setBody(this.getInjectMethodBody(classes));
+            method.setBody(this.getInjectMethodBody(pool,classes));
             classes.addMethod(method);
         }
     }

@@ -28,11 +28,6 @@
             <artifactId>compile-lib</artifactId>
         </dependency>
         <dependency>
-            <groupId>top.guyi.iot.ipojo.compile</groupId>
-            <artifactId>default-compile-expand</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
             <version>3.6.1</version>

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 @Getter
 @AllArgsConstructor
@@ -18,11 +19,10 @@ public enum CompileType {
     private String value;
     private String text;
 
-    public static CompileType getByValue(String value){
+    public static Optional<CompileType> getByValue(String value){
         return Arrays.stream(values())
                 .filter(type -> type.getValue().equals(value))
-                .findFirst()
-                .orElse(COMPONENT);
+                .findFirst();
     }
 
 }

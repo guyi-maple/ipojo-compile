@@ -1,9 +1,7 @@
 package top.guyi.iot.ipojo.compile.lib.configuration.parse;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.exception.CompileInfoCheckException;
@@ -24,6 +22,13 @@ import java.util.*;
 public class CompileFactory {
 
     private Gson gson = new Gson();
+
+    private List<String> excludeFields = Arrays.asList(
+            "name",
+            "type",
+            "extends",
+            "symbolicName"
+    );
 
     public Compile create(Project project) throws IOException, CompileInfoCheckException {
         File file = new File(project.getWork() + "/compile.info");
@@ -49,6 +54,9 @@ public class CompileFactory {
         if (StringUtils.isEmpty(configuration.getOrDefault("name","").toString())){
             throw new CompileInfoCheckException("name");
         }
+
+        CompileType.getByValue(configuration.getOrDefault("type","component").toString())
+                .orElseThrow(() -> new RuntimeException("错误的编译类型"));
 
         getExtendConfiguration(configuration,getAllConfiguration(project.getDependencies()));
 
@@ -119,7 +127,11 @@ public class CompileFactory {
                 .map(configurations::get)
                 .filter(Objects::nonNull)
                 .forEach(extend ->
-                        extend.forEach((key,value) -> configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)))));
+                        extend.forEach((key,value) -> {
+                            if (!this.excludeFields.contains(key)){
+                                configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)));
+                            }
+                        }));
         return configuration;
     }
 

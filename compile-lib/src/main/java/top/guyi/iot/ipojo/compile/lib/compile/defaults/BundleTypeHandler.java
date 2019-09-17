@@ -18,8 +18,8 @@ import java.util.Set;
 public class BundleTypeHandler implements CompileTypeHandler {
 
     @Override
-    public CompileType forType() {
-        return CompileType.BUNDLE;
+    public boolean check(Compile compile) {
+        return compile.getType() == CompileType.BUNDLE;
     }
 
     @Override

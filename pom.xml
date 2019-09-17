@@ -10,7 +10,6 @@
     <modules>
         <module>compile-lib</module>
         <module>compile-maven-plugin</module>
-        <module>default-compile-expand</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -36,11 +35,6 @@
             <dependency>
                 <groupId>top.guyi.iot.ipojo.compile</groupId>
                 <artifactId>compile-lib</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>top.guyi.iot.ipojo.compile</groupId>
-                <artifactId>default-compile-expand</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

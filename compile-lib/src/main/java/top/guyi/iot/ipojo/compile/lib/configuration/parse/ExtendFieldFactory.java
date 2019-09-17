@@ -48,14 +48,14 @@ public class ExtendFieldFactory {
             return extendListSerial((List<Object>)source,(Serializable) target);
         }
 
-        if ((source instanceof Serializable) && (target instanceof Serializable)){
-            return extendSerial((Serializable)source,(Serializable)target);
-        }
-        if ((source instanceof Serializable) && (target instanceof List)){
+        if (isSerial(source) && (target instanceof List)){
             return extendSerialList((Serializable)source,(List<Object>)target);
         }
-        if ((source instanceof Serializable) && (target instanceof Map)){
+        if (isSerial(source) && (target instanceof Map)){
             return extendSerialMap((Serializable)source,(Map<String,Object>)target);
+        }
+        if (isSerial(source) && (isSerial(target))){
+            return extendSerial((Serializable)source,(Serializable)target);
         }
 
         return target;

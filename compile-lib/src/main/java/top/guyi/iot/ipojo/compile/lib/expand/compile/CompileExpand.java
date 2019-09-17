@@ -1,16 +1,16 @@
-package top.guyi.iot.ipojo.compile.lib.compile;
+package top.guyi.iot.ipojo.compile.lib.expand.compile;
 
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import javassist.ClassPool;
-import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 
 import java.util.Set;
 
-/**
- * 编译处理器
- */
-public interface CompileTypeHandler {
+public interface CompileExpand {
+
+    default int order(){
+        return 999;
+    }
 
     default boolean check(Compile compile){
         return true;
@@ -24,6 +24,6 @@ public interface CompileTypeHandler {
      * @return 更新后的项目组件
      * @throws Exception
      */
-    Set<CompileClass> handle(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception;
+    Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception;
 
 }

@@ -2,6 +2,7 @@ package top.guyi.iot.ipojo.compile.lib.utils;
 
 import top.guyi.iot.ipojo.application.ApplicationContext;
 import javassist.*;
+import top.guyi.iot.ipojo.compile.lib.classes.exception.SetMethodNotFoundException;
 
 public class JavassistUtils {
 
@@ -15,8 +16,22 @@ public class JavassistUtils {
                 setMethod = CtNewMethod.setter(setMethodName,field);
                 classes.addMethod(setMethod);
             } catch (CannotCompileException ex) {
-                ex.printStackTrace();
                 setMethod = null;
+                for (CtMethod method : classes.getMethods()) {
+                    try {
+                        if (method.getName().equals(setMethodName)
+                                && method.getParameterTypes().length == 1
+                                && method.getParameterTypes()[0].getName().equals(field.getType().getName())){
+                            setMethod = method;
+                            break;
+                        }
+                    } catch (NotFoundException exc) {
+                        exc.printStackTrace();
+                    }
+                }
+                if (setMethod == null){
+                    throw new SetMethodNotFoundException(classes,field);
+                }
             }
         }
         return setMethod;
