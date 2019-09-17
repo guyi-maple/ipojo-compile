@@ -7,6 +7,7 @@ import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.log.LoggerExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.service.BundleServiceReferenceExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.service.ServiceRegisterExpand;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ public class CompileExpandFactory {
     public List<CompileExpand> get(Compile compile){
         return this.expands.stream()
                 .filter(expand -> expand.check(compile))
+                .sorted(Comparator.comparingInt(CompileExpand::order))
                 .collect(Collectors.toList());
     }
 

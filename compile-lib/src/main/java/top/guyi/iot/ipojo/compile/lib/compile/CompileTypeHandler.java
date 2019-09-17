@@ -12,6 +12,10 @@ import java.util.Set;
  */
 public interface CompileTypeHandler {
 
+    default int order(){
+        return 999;
+    }
+
     default boolean check(Compile compile){
         return true;
     }

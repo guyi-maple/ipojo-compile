@@ -5,9 +5,7 @@ import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.defaults.*;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ManifestExpandFactory {
@@ -34,6 +32,7 @@ public class ManifestExpandFactory {
     public List<ManifestExpand> get(Compile compile){
         return this.expands.stream()
                 .filter(expand -> expand.check(compile))
+                .sorted(Comparator.comparingInt(ManifestExpand::order))
                 .collect(Collectors.toList());
     }
 
