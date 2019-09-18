@@ -6,6 +6,7 @@ import lombok.Data;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.CompileExclude;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
+import top.guyi.iot.ipojo.compile.lib.enums.JdkVersion;
 
 import java.util.*;
 
@@ -18,6 +19,12 @@ public class Compile {
 
     @Expose(serialize = false)
     private String activator;
+
+    @Expose
+    private JdkVersion jdk = JdkVersion.JAVA8;
+
+    @Expose
+    private boolean formatJdkVersion;
 
     @Expose
     private String name;

@@ -3,6 +3,7 @@ package top.guyi.iot.ipojo.compile.lib;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.compile.lib.classes.ClassCompiler;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandlerFactory;
@@ -11,12 +12,13 @@ import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.configuration.parse.CompileFactory;
+import top.guyi.iot.ipojo.compile.lib.enums.JdkVersion;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
 import javassist.ClassPool;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpandFactory;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.ManifestExpandFactory;
 
-import java.io.File;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -83,6 +85,15 @@ public class CompileExecutor {
                 }
             }
 
+            // 更改Java版本
+            if (compile.isFormatJdkVersion()){
+                for (CompileClass component : components) {
+                    if (component.isWrite()){
+                        this.formatJavaVersion(component.getClasses().getURL(),compile.getJdk());
+                    }
+                }
+            }
+
             // 写出MANIFEST.INF文件
             this.manifestExpandFactory.write(pool,compile,components);
 
@@ -98,5 +109,15 @@ public class CompileExecutor {
         }
         return Optional.ofNullable(compile);
     }
+
+    private void formatJavaVersion(URL url, JdkVersion version) throws IOException {
+        byte[] arr = IOUtils.toByteArray(url.openStream());
+        arr[7] = (byte)version.getTarget();
+        OutputStream out = new FileOutputStream(url.getFile());
+        out.write(arr);
+        out.flush();
+        out.close();
+    }
+
 
 }

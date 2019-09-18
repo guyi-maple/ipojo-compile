@@ -11,10 +11,7 @@ import org.osgi.framework.BundleContext;
 import top.guyi.iot.ipojo.application.osgi.service.reference.*;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class BundleServiceReferenceExpand implements CompileExpand {
@@ -33,6 +30,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
         StringBuilder methodBody = new StringBuilder("{\n");
 
+        Set<CompileClass> add = new HashSet<>();
         for (CompileClass component : components) {
             for (CtMethod method : this.getMethods(component.getClasses())) {
                 BundleServiceReference reference = (BundleServiceReference) method.getAnnotation(BundleServiceReference.class);
@@ -46,7 +44,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
                         "$0.register(new %s(%s,%s,%s));\n",
                         ServiceReferenceEntry.class.getName(),
                         this.getClassString(reference),
-                        this.invokerMethod(pool,component.getClasses(),method, compile),
+                        this.invokerMethod(pool,add,component.getClasses(),method, compile),
                         checker
                 ));
             }
@@ -66,6 +64,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
         listener.addMethod(registerAll);
 
         components.add(new CompileClass("AutoDefaultBundleServiceListener",listener,true,true,false,1000));
+        components.addAll(add);
 
         return components;
     }
@@ -86,7 +85,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
         return sb.substring(0,sb.length() - 1) + "}";
     }
 
-    private String invokerMethod(ClassPool pool, CtClass component, CtMethod method, Compile compile) throws NotFoundException, CannotCompileException, IOException {
+    private String invokerMethod(ClassPool pool,Set<CompileClass> add,CtClass component, CtMethod method, Compile compile) throws NotFoundException, CannotCompileException, IOException {
         String className = String.format("%s.ServiceReferenceInvoker%s", compile.getPackageName(), DigestUtils.md5Hex(UUID.randomUUID().toString()));
 
         CtClass invoker = pool.makeClass(className);
@@ -110,8 +109,9 @@ public class BundleServiceReferenceExpand implements CompileExpand {
                 method.getParameterTypes().length > 0 ? sb.substring(0,sb.length() - 1) : "")
         );
         invoker.addMethod(invoke);
-        invoker.writeFile(compile.getProject().getOutput());
 
+        invoker.writeFile(compile.getProject().getOutput());
+        add.add(new CompileClass(false,invoker));
         return String.format("new %s()",className);
     }
 
