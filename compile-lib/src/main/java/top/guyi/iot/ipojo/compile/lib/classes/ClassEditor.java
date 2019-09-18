@@ -5,6 +5,8 @@ import top.guyi.iot.ipojo.application.annotation.Resource;
 import top.guyi.iot.ipojo.application.component.ComponentInterface;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.classes.entry.FieldEntry;
+import top.guyi.iot.ipojo.compile.lib.expand.inject.FieldInjector;
+import top.guyi.iot.ipojo.compile.lib.expand.inject.FieldInjectorFactory;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
 import javassist.*;
 
@@ -12,6 +14,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ClassEditor {
+
+    private FieldInjectorFactory injectorFactory = new FieldInjectorFactory();
 
     private CtClass applicationClass;
     private CtClass componentInterfaceClass;
@@ -77,38 +81,8 @@ public class ClassEditor {
                 .stream()
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
-                    try{
-                        if ((!field.isEquals())
-                                || (field.getField().getType().isInterface())
-                                || (Modifier.isAbstract(field.getField().getType().getModifiers()))){
-                            return String.format(
-                                    "$0.%s((%s) $1.get(%s.class));",
-                                    setMethod.getName(),
-                                    field.getField().getType().getName(),
-                                    field.getField().getType().getName()
-                            );
-                        }
-
-                        if (StringUtils.isEmpty(field.getName())){
-                            return String.format(
-                                    "$0.%s((%s) $1.get(%s.class,true));",
-                                    setMethod.getName(),
-                                    field.getField().getType().getName(),
-                                    field.getField().getType().getName()
-                            );
-                        }
-
-                        return String.format(
-                                "$0.%s((%s) $1.get(%s.class,\"%s\"));",
-                                setMethod.getName(),
-                                field.getField().getType().getName(),
-                                field.getField().getType().getName(),
-                                field.getName()
-                        );
-                    }catch (NotFoundException e){
-                        e.printStackTrace();
-                        return null;
-                    }
+                    FieldInjector injector = injectorFactory.get(field,pool);
+                    return injector.injectCode(field,setMethod,pool);
                 })
                 .filter(Objects::nonNull)
                 .forEach(sb::append);
