@@ -17,7 +17,7 @@ public class ClassCompiler {
     private ClassEditor editor = new ClassEditor();
 
     public Set<CompileClass> compile(ClassPool pool, Compile compile) throws IOException, NotFoundException {
-        return this.scanner.getComponent(pool,compile.getProject().getWork())
+        return this.scanner.getComponent(pool,compile)
                 .stream()
                 .map(component -> {
                     try {

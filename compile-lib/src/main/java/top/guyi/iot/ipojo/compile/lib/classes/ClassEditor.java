@@ -11,7 +11,6 @@ import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
 import javassist.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ClassEditor {
 
@@ -32,53 +31,23 @@ public class ClassEditor {
         return this.componentInterfaceClass;
     }
 
-    private Map<String,CtField> listField(CtClass stopClass,CtClass classes,Map<String,CtField> fields){
-        List<CtField> fieldList = new LinkedList<>();
-        fieldList.addAll(Arrays.asList(classes.getDeclaredFields()));
-        fieldList.addAll(Arrays.asList(classes.getFields()));
-        fieldList
-                .stream()
-                .filter(field -> !fields.containsKey(field.getName()))
-                .forEach(field -> fields.put(field.getName(),field));
-
-        try {
-            CtClass superClass = classes.getSuperclass();
-            if (!superClass.getName().equals(stopClass.getName())){
-                return this.listField(stopClass,superClass,fields);
-            }
-        } catch (NotFoundException e) {
-            e.printStackTrace();
-        }
-
-        return fields;
-    }
-
-    public List<FieldEntry> getFields(CtClass stopClass,CtClass classes){
-        return this.listField(stopClass,classes,new HashMap<>()).values()
-                .stream()
-                .map(field -> {
-                    try {
-                        Resource resource = (Resource) field.getAnnotation(Resource.class);
-                        if (resource != null){
-                            if (StringUtils.isEmpty(resource.name())){
-                                return new FieldEntry(field,resource.equals());
-                            }else{
-                                return new FieldEntry(field,resource.name(),resource.equals());
-                            }
-                        }
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
-
     public String getInjectMethodBody(ClassPool pool,CtClass classes) throws NotFoundException {
-        StringBuffer sb = new StringBuffer("{");
-        this.getFields(pool.get(Object.class.getName()),classes)
-                .stream()
+        StringBuilder sb = new StringBuilder("{");
+        JavassistUtils.getFields(pool.get(Object.class.getName()),classes,field -> {
+            try {
+                Resource resource = (Resource) field.getAnnotation(Resource.class);
+                if (resource != null){
+                    if (StringUtils.isEmpty(resource.name())){
+                        return new FieldEntry(field,resource.equals());
+                    }else{
+                        return new FieldEntry(field,resource.name(),resource.equals());
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }).stream()
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
                     FieldInjector injector = injectorFactory.get(field,pool);

@@ -7,6 +7,7 @@ import java.util.Set;
 @Data
 public class ComponentInfo {
 
+    private String name;
     private Set<ComponentEntry> components;
 
 }

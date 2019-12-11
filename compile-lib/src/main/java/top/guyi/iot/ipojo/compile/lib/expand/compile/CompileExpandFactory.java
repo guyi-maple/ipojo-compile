@@ -1,6 +1,8 @@
 package top.guyi.iot.ipojo.compile.lib.expand.compile;
 
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.stream.AwaiterExpand;
+import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.coap.CoapExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.configuration.ConfigurationExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.event.EventExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.log.LoggerExpand;
@@ -23,7 +25,9 @@ public class CompileExpandFactory {
                 .add(new EventExpand())
                 .add(new LoggerExpand())
                 .add(new BundleServiceReferenceExpand())
-                .add(new ServiceRegisterExpand());
+                .add(new ServiceRegisterExpand())
+                .add(new CoapExpand())
+                .add(new AwaiterExpand());
     }
 
     public CompileExpandFactory add(CompileExpand expand){

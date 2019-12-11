@@ -2,9 +2,13 @@ package top.guyi.iot.ipojo.compile.lib.utils;
 
 import top.guyi.iot.ipojo.application.ApplicationContext;
 import javassist.*;
+import top.guyi.iot.ipojo.application.annotation.Resource;
+import top.guyi.iot.ipojo.application.utils.StringUtils;
+import top.guyi.iot.ipojo.compile.lib.classes.entry.FieldEntry;
 import top.guyi.iot.ipojo.compile.lib.classes.exception.SetMethodNotFoundException;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -84,6 +88,35 @@ public class JavassistUtils {
 
     public static CtMethod getInjectMethod(ClassPool pool,CtClass classes) throws NotFoundException {
         return classes.getDeclaredMethod("inject",new CtClass[]{pool.get(ApplicationContext.class.getName())});
+    }
+
+    private static Map<String,CtField> listField(CtClass stopClass,CtClass classes,Map<String,CtField> fields){
+        List<CtField> fieldList = new LinkedList<>();
+        fieldList.addAll(Arrays.asList(classes.getDeclaredFields()));
+        fieldList.addAll(Arrays.asList(classes.getFields()));
+        fieldList
+                .stream()
+                .filter(field -> !fields.containsKey(field.getName()))
+                .forEach(field -> fields.put(field.getName(),field));
+
+        try {
+            CtClass superClass = classes.getSuperclass();
+            if (!superClass.getName().equals(stopClass.getName())){
+                return listField(stopClass,superClass,fields);
+            }
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return fields;
+    }
+
+    public static <T> List<T> getFields(CtClass stopClass, CtClass classes, Function<CtField,T> converter){
+        return listField(stopClass,classes,new HashMap<>()).values()
+                .stream()
+                .map(converter)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
 }

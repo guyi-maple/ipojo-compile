@@ -20,14 +20,17 @@ public class LoggerExpand implements CompileExpand {
 
     @Override
     public boolean check(Compile compile) {
-        return compile.getType() == CompileType.BUNDLE;
+        return true;
     }
 
     @Override
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
         CtClass repository = pool.makeClass(String.format("%s.DefaultAutoLoggerRepository",compile.getPackageName()));
         repository.setSuperclass(pool.get(AbstractLoggerRepository.class.getName()));
-        components.add(new CompileClass(repository,true,true,false));
+
+        if (compile.getType() == CompileType.BUNDLE){
+            components.add(new CompileClass(repository,true,true,false));
+        }
 
         components
                 .stream()
@@ -50,6 +53,8 @@ public class LoggerExpand implements CompileExpand {
                         )
                 )
                 .filter(entry -> entry.getLoggerEntry().size() > 0)
+                .filter(entry -> compile.getType() != CompileType.BUNDLE
+                        || entry.getComponent().getClasses().getPackageName().startsWith(compile.getPackageName()))
                 .forEach(entry -> {
                     try {
                         StringBuffer injectAfter = new StringBuffer();
@@ -57,13 +62,23 @@ public class LoggerExpand implements CompileExpand {
                         entry.getLoggerEntry().forEach(logger -> {
                             CtMethod setMethod = JavassistUtils.getSetMethod(
                                     entry.getComponent().getClasses(),logger.getField());
-                            injectAfter.append(String.format(
-                                    "$0.%s(((%s)$1.get(%s.class,true)).get(\"%s\"));",
-                                    setMethod.getName(),
-                                    repository.getName(),
-                                    repository.getName(),
-                                    logger.getLoggerName()
-                            ));
+                            if (compile.getType() == CompileType.BUNDLE){
+                                injectAfter.append(String.format(
+                                        "$0.%s(((%s)$1.get(%s.class,true)).get(\"%s\"));",
+                                        setMethod.getName(),
+                                        repository.getName(),
+                                        repository.getName(),
+                                        logger.getLoggerName()
+                                ));
+                            }else {
+                                injectAfter.append(String.format(
+                                        "$0.%s(((%s)$1.get(%s.class)).get(\"%s\"));",
+                                        setMethod.getName(),
+                                        AbstractLoggerRepository.class.getName(),
+                                        AbstractLoggerRepository.class.getName(),
+                                        logger.getLoggerName()
+                                ));
+                            }
                         });
                         injectMethod.insertAfter(injectAfter.toString());
                     } catch (NotFoundException | CannotCompileException e) {

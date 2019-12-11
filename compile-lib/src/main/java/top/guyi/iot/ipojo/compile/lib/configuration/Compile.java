@@ -40,6 +40,9 @@ public class Compile {
     private String packageName;
 
     @Expose
+    private Set<String> modules = new HashSet<>();
+
+    @Expose
     @SerializedName("manifest")
     private Map<String,Object> manifestTemplate = Collections.emptyMap();
 
@@ -48,6 +51,12 @@ public class Compile {
 
     @Expose
     private CompileExclude exclude = new CompileExclude();
+
+    @Expose
+    private Map<String,String> configuration = Collections.emptyMap();
+
+    @Expose
+    private Map<String,String> env = Collections.emptyMap();
 
     public String getSymbolicName(){
         return Optional.ofNullable(this.symbolicName).orElse(this.name);

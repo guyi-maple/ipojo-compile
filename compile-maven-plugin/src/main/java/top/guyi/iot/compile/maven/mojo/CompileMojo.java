@@ -53,6 +53,7 @@ public class CompileMojo extends AbstractMojo {
         project.setDependencies(this.getDependency());
         project.setBaseDir(this.project.getBasedir().getAbsolutePath());
         project.setWork(this.project.getBuild().getOutputDirectory());
+
         return project;
     }
 

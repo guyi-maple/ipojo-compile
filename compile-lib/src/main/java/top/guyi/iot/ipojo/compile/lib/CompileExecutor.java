@@ -58,7 +58,7 @@ public class CompileExecutor {
             URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
             Method add = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
             add.setAccessible(true);
-            // 添加编译期依赖
+//             添加编译期依赖
             add.invoke(classLoader,new URL(String.format("file:///%s",compile.getProject().getWork())));
             for (Dependency dependency : project.getDependencies()) {
                 pool.appendClassPath(dependency.getPath());

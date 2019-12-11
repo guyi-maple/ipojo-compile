@@ -10,6 +10,7 @@ import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentEntry;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentInfo;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +37,8 @@ public class ClassScanner {
         return files;
     }
 
-    public Set<CompileClass> scan(ClassPool pool, String path) throws IOException, NotFoundException {
+    public Set<CompileClass> scan(ClassPool pool,Compile compile) throws IOException, NotFoundException {
+        String path = compile.getProject().getWork();
         Set<File> files = this.getClassFile(new File(path),new HashSet<>());
 
         Set<CompileClass> components = new HashSet<>();
@@ -55,28 +57,30 @@ public class ClassScanner {
         while (enumeration.hasMoreElements()){
             String json = IOUtils.toString(enumeration.nextElement().openStream(), StandardCharsets.UTF_8);
             ComponentInfo componentInfo = this.gson.fromJson(json,ComponentInfo.class);
-            for (ComponentEntry component : componentInfo.getComponents()) {
-                CtClass classes = pool.get(component.getClasses());
-                components.add(new CompileClass(classes,false,true,component.isProxy()));
+            if (compile.getModules().contains(componentInfo.getName())){
+                for (ComponentEntry component : componentInfo.getComponents()) {
+                    CtClass classes = pool.get(component.getClasses());
+                    components.add(new CompileClass(classes,false,true,component.isProxy()));
+                }
             }
         }
 
         return components;
     }
 
-    public Set<CompileClass> getComponent(ClassPool pool,String path) throws IOException, NotFoundException {
-        return this.scan(pool,path)
+    public Set<CompileClass> getComponent(ClassPool pool, Compile compile) throws IOException, NotFoundException {
+        return this.scan(pool,compile)
                 .stream()
-                .map(compile -> {
+                .map(classes -> {
                     try {
-                        Component component = (Component) compile.getClasses().getAnnotation(Component.class);
+                        Component component = (Component) classes.getClasses().getAnnotation(Component.class);
                         if (component != null){
-                            compile.setProxy(component.proxy());
-                            compile.setOrder(component.order());
+                            classes.setProxy(component.proxy());
+                            classes.setOrder(component.order());
                             if (!StringUtils.isEmpty(component.name())){
-                                compile.setName(component.name());
+                                classes.setName(component.name());
                             }
-                            return compile;
+                            return classes;
                         }
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();

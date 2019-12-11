@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 public class ComponentTypeHandler implements CompileTypeHandler {
 
     private Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private ClassCompiler classCompiler = new ClassCompiler();
 
     @Override
     public boolean check(Compile compile) {
@@ -36,11 +35,12 @@ public class ComponentTypeHandler implements CompileTypeHandler {
         ComponentInfo componentInfo = new ComponentInfo();
 
         componentInfo.setComponents(
-                this.classCompiler.compile(pool,compile)
-                        .stream()
+                components.stream()
                         .map(component -> new ComponentEntry(component.getClasses().getName()))
                         .collect(Collectors.toSet())
         );
+
+        componentInfo.setName(compile.getName());
 
         File target = new File(compile.getProject().getOutput() + "/component.info");
         if (!target.getParentFile().exists()){
@@ -51,6 +51,8 @@ public class ComponentTypeHandler implements CompileTypeHandler {
         IOUtils.write(this.gson.toJson(componentInfo),writer);
         writer.flush();
         writer.close();
+
+        compile.getModules().add(compile.getName());
 
         return components;
     }

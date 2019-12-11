@@ -6,12 +6,14 @@ import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.exception.CompileInfoCheckException;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Profile;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -60,11 +62,33 @@ public class CompileFactory {
 
         getExtendConfiguration(configuration,getAllConfiguration(project.getDependencies()));
 
+        Profile profile;
+        if (configuration.containsKey("profile")){
+            profile = this.gson.fromJson(this.gson.toJson(configuration.get("profile")),Profile.class);
+        }else{
+            profile = new Profile();
+        }
+        extendProfile(configuration,profile);
+
         Compile compile = CompileFormat.format(configuration);
         if (StringUtils.isEmpty(compile.getPackageName())){
             throw new CompileInfoCheckException("packageName");
         }
         return compile;
+    }
+
+    private void extendProfile(Map<String,Object> configuration, Profile profile) throws IOException {
+        File file = new File(String.format("%s.profile.json",profile.getProfileName()));
+        if (file.exists()){
+            Map<String,Object> profileConfiguration = this.gson.fromJson(
+                    IOUtils.toString(new FileInputStream(file),StandardCharsets.UTF_8)
+                    ,new TypeToken<Map<String,Object>>(){}.getType());
+            profileConfiguration.forEach((key,value) -> {
+                if (!this.excludeFields.contains(key)){
+                    configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)));
+                }
+            });
+        }
     }
 
     private Map<String,Map<String,Object>> getAllConfiguration(Set<Dependency> dependencies) throws IOException {
@@ -122,16 +146,26 @@ public class CompileFactory {
     }
 
     private Map<String,Object> getExtendConfiguration(Map<String,Object> configuration,Map<String,Map<String,Object>> configurations){
-        this.getExtendNames(configuration)
+//        this.getExtendNames(configuration)
+//                .stream()
+//                .map(configurations::get)
+//                .filter(Objects::nonNull)
+//                .forEach(extend ->
+//                        extend.forEach((key,value) -> {
+//                            if (!this.excludeFields.contains(key)){
+//                                configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)));
+//                            }
+//                        }));
+//        return configuration;
+        configurations.values()
                 .stream()
-                .map(configurations::get)
-                .filter(Objects::nonNull)
-                .forEach(extend ->
-                        extend.forEach((key,value) -> {
-                            if (!this.excludeFields.contains(key)){
-                                configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)));
+                .map(Map::entrySet)
+                .flatMap(Collection::stream)
+                .forEach(e -> {
+                            if (!this.excludeFields.contains(e.getKey())){
+                                configuration.put(e.getKey(),ExtendFieldFactory.extend(e.getValue(),configuration.get(e.getKey())));
                             }
-                        }));
+                        });
         return configuration;
     }
 
