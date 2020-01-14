@@ -9,6 +9,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class FieldEntry {
 
+    private boolean sync;
     private CtClass classes;
     private CtField field;
 

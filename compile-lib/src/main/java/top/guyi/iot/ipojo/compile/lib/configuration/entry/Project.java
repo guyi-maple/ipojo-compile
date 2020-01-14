@@ -21,6 +21,8 @@ public class Project {
     private String groupId;
     private String artifactId;
 
+    private String repository;
+
     private Set<Dependency> dependencies = Collections.emptySet();
 
     public void setWork(String work){

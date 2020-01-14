@@ -61,8 +61,8 @@ public class CompileExecutor {
 //             添加编译期依赖
             add.invoke(classLoader,new URL(String.format("file:///%s",compile.getProject().getWork())));
             for (Dependency dependency : project.getDependencies()) {
-                pool.appendClassPath(dependency.getPath());
-                add.invoke(classLoader,new URL(String.format("file:///%s",dependency.getPath())));
+                pool.appendClassPath(dependency.get(project));
+                add.invoke(classLoader,dependency.getURL(project));
             }
 
             // 获取组件列表
@@ -70,12 +70,12 @@ public class CompileExecutor {
 
             // 执行拓展
             for (CompileExpand expand : this.compileExpandFactory.get(compile)) {
-                components.addAll(expand.execute(pool,compile,components));
+                expand.execute(pool,compile,components);
             }
 
             // 执行编译处理器
             for (CompileTypeHandler handler : this.compileTypeHandlerFactory.get(compile)) {
-                components.addAll(handler.handle(pool, compile, components));
+                handler.handle(pool, compile, components);
             }
 
             // 写出类文件

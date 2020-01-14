@@ -53,6 +53,7 @@ public class CompileMojo extends AbstractMojo {
         project.setDependencies(this.getDependency());
         project.setBaseDir(this.project.getBasedir().getAbsolutePath());
         project.setWork(this.project.getBuild().getOutputDirectory());
+        project.setRepository(session.getRepositorySession().getLocalRepository().getBasedir().getAbsolutePath());
 
         return project;
     }
@@ -60,8 +61,6 @@ public class CompileMojo extends AbstractMojo {
     private Set<Dependency> getDependency() throws DependencyGraphBuilderException {
         ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
         buildingRequest.setProject(project);
-
-        String repository = session.getRepositorySession().getLocalRepository().getBasedir().getAbsolutePath();
 
         Set<DependencyNode> dependencyNodes = new HashSet<>();
         listDependencyNode(builder.buildDependencyGraph(buildingRequest, null),dependencyNodes);
@@ -73,7 +72,6 @@ public class CompileMojo extends AbstractMojo {
                         && artifact.getGroupId().equals(project.getGroupId())))
                 .filter(artifact -> !"scope".equals(artifact.getScope()))
                 .map(artifact -> new Dependency(
-                        repository,
                         artifact.getGroupId(),
                         artifact.getArtifactId(),
                         artifact.getVersion(),

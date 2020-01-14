@@ -4,6 +4,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.CompileExclude;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.enums.JdkVersion;
@@ -41,6 +42,9 @@ public class Compile {
 
     @Expose
     private Set<String> modules = new HashSet<>();
+
+    @Expose
+    private Set<Dependency> dependencies = Collections.emptySet();
 
     @Expose
     @SerializedName("manifest")

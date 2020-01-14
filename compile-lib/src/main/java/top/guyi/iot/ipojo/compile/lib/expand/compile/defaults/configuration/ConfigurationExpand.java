@@ -34,7 +34,7 @@ public class ConfigurationExpand implements CompileExpand {
                                     return null;
                                 }
                                 return new ConfigurationField(
-                                        component.getClasses(),
+                                        component,
                                         field,
                                         configurationKey
                                 );
@@ -52,19 +52,46 @@ public class ConfigurationExpand implements CompileExpand {
                 .forEach(field -> {
                     String name = field.getKey().key();
                     name = StringUtils.isEmpty(name) ? field.getField().getName() : name;
-                    Optional.ofNullable(compile.getConfiguration().get(name))
-                            .ifPresent(value -> {
-                                try {
-                                    CtConstructor constructor = field.getClasses().getDeclaredConstructor(new CtClass[0]);
-                                    constructor.insertAfter(String.format(
-                                            "$0.%s = \"%s\";\n",
-                                            field.getField().getName(),
-                                            value
-                                    ));
-                                } catch (NotFoundException | CannotCompileException e) {
-                                    e.printStackTrace();
-                                }
-                            });
+
+                    boolean write = false;
+
+                    if (field.getKey().file()){
+                        try {
+                            CtMethod injectMethod = JavassistUtils
+                                    .getInjectMethod(pool,field.getClasses().getClasses());
+                            CtMethod setMethod = JavassistUtils.getSetMethod(field.getClasses().getClasses(),field.getField());
+                            injectMethod.insertAfter(String.format(
+                                    "$0.%s((%s)$1.getConfigurationFile(\"%s\",%s.class,$0.%s));",
+                                    setMethod.getName(),
+                                    field.getField().getType().getName(),
+                                    field.getKey().key(),
+                                    field.getField().getType().getName(),
+                                    field.getField().getName()
+                            ));
+                            write = true;
+                        } catch (NotFoundException | CannotCompileException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    Object value = compile.getConfiguration().get(name);
+                    if (value != null){
+                        try {
+                            CtConstructor constructor = field.getClasses().getClasses().getDeclaredConstructor(new CtClass[0]);
+                            constructor.insertAfter(String.format(
+                                    "$0.%s = \"%s\";\n",
+                                    field.getField().getName(),
+                                    value
+                            ));
+                            write = true;
+                        } catch (NotFoundException | CannotCompileException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    if (write){
+                        field.getClasses().setWrite(true);
+                    }
                 });
 
         return components;

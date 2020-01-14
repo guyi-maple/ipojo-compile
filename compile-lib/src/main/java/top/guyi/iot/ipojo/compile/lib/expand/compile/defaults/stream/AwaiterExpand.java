@@ -46,7 +46,14 @@ public class AwaiterExpand implements CompileExpand {
                 .stream()
                 .map(component -> JavassistUtils.getFields(object,component.getClasses(), field -> {
                     if (field.hasAnnotation(Awaiter.class)){
-                        return new FieldEntry(component.getClasses(),field);
+                        boolean sync = false;
+                        try {
+                            Awaiter awaiter = (Awaiter) field.getAnnotation(Awaiter.class);
+                            sync = awaiter.sync();
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        return new FieldEntry(sync,component.getClasses(),field);
                     }
                     return null;
                 }))
@@ -55,9 +62,10 @@ public class AwaiterExpand implements CompileExpand {
                     StringBuffer setCode = new StringBuffer();
                     fields.forEach(field -> setCode.append(
                             String.format(
-                                    "$0.%s = %s.create();\n",
+                                    "$0.%s = %s.create(%s);\n",
                                     field.getField().getName(),
-                                    MonoAwaiter.class.getName()
+                                    MonoAwaiter.class.getName(),
+                                    field.isSync()
                             )
                     ));
                     try {

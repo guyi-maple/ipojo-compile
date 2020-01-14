@@ -6,20 +6,16 @@ import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.exception.CompileInfoCheckException;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
-import top.guyi.iot.ipojo.compile.lib.configuration.entry.Profile;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
-import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CompileFactory {
 
@@ -31,6 +27,26 @@ public class CompileFactory {
             "extends",
             "symbolicName"
     );
+
+    private URLClassLoader getClassLoader(Project project){
+        Set<URL> urls = project.getDependencies().stream()
+                .map(dependency -> {
+                    try {
+                        return dependency.getURL(project);
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        try {
+            urls.add(new URL(String.format("file:///%s",project.getWork())));
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return new URLClassLoader(urls.toArray(new URL[0]));
+    }
 
     public Compile create(Project project) throws IOException, CompileInfoCheckException {
         File file = new File(project.getWork() + "/compile.info");
@@ -60,57 +76,51 @@ public class CompileFactory {
         CompileType.getByValue(configuration.getOrDefault("type","component").toString())
                 .orElseThrow(() -> new RuntimeException("错误的编译类型"));
 
-        getExtendConfiguration(configuration,getAllConfiguration(project.getDependencies()));
+        getExtendConfiguration(configuration,getAllConfiguration(configuration,project));
 
-        Profile profile;
         if (configuration.containsKey("profile")){
-            profile = this.gson.fromJson(this.gson.toJson(configuration.get("profile")),Profile.class);
-        }else{
-            profile = new Profile();
+            if (configuration.get("profile") instanceof List){
+                extendProfile(configuration,new HashSet<>((List<String>)configuration.get("profile")),project);
+            }else{
+                extendProfile(configuration,Collections.singleton(configuration.get("profile").toString()),project);
+            }
         }
-        extendProfile(configuration,profile);
 
         Compile compile = CompileFormat.format(configuration);
+        project.getDependencies().addAll(compile.getDependencies());
+
         if (StringUtils.isEmpty(compile.getPackageName())){
             throw new CompileInfoCheckException("packageName");
         }
         return compile;
     }
 
-    private void extendProfile(Map<String,Object> configuration, Profile profile) throws IOException {
-        File file = new File(String.format("%s.profile.json",profile.getProfileName()));
-        if (file.exists()){
-            Map<String,Object> profileConfiguration = this.gson.fromJson(
-                    IOUtils.toString(new FileInputStream(file),StandardCharsets.UTF_8)
-                    ,new TypeToken<Map<String,Object>>(){}.getType());
-            profileConfiguration.forEach((key,value) -> {
-                if (!this.excludeFields.contains(key)){
-                    configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)));
-                }
-            });
+    private void extendProfile(Map<String,Object> configuration, Set<String> profileNames,Project project) throws IOException {
+        ClassLoader loader = this.getClassLoader(project);
+        for (String name : profileNames) {
+            InputStream inputStream = loader.getResourceAsStream(String.format("%s.profile",name));
+            if (inputStream != null){
+                Map<String,Object> profileConfiguration = this.gson.fromJson(
+                        IOUtils.toString(inputStream,StandardCharsets.UTF_8)
+                        ,new TypeToken<Map<String,Object>>(){}.getType());
+                profileConfiguration.forEach((key,value) -> {
+                    if (!this.excludeFields.contains(key)){
+                        configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)));
+                    }
+                });
+            }
         }
     }
 
-    private Map<String,Map<String,Object>> getAllConfiguration(Set<Dependency> dependencies) throws IOException {
-        URL[] urls = dependencies.stream()
-                .map(dependency -> {
-                    try {
-                        return new URL(String.format("file:///%s",dependency.getPath()));
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .toArray(URL[]::new);
-        ClassLoader loader = new URLClassLoader(urls);
+    private Map<String,Map<String,Object>> getAllConfiguration(Map<String,Object> configuration,Project project) throws IOException {
+        URLClassLoader loader = this.getClassLoader(project);
         Map<String,Map<String,Object>> configurations = new HashMap<>();
         Enumeration<URL> enumeration = loader.getResources("compile.info");
         while (enumeration.hasMoreElements()){
-            Map<String,Object> configuration = this.getConfiguration(
+            Map<String,Object> config = this.getConfiguration(
                     IOUtils.toString(enumeration.nextElement().openStream(),StandardCharsets.UTF_8)
             );
-            configurations.put(this.getName(configuration),configuration);
+            configurations.put(this.getName(config),config);
         }
         return configurations;
     }
@@ -146,17 +156,6 @@ public class CompileFactory {
     }
 
     private Map<String,Object> getExtendConfiguration(Map<String,Object> configuration,Map<String,Map<String,Object>> configurations){
-//        this.getExtendNames(configuration)
-//                .stream()
-//                .map(configurations::get)
-//                .filter(Objects::nonNull)
-//                .forEach(extend ->
-//                        extend.forEach((key,value) -> {
-//                            if (!this.excludeFields.contains(key)){
-//                                configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)));
-//                            }
-//                        }));
-//        return configuration;
         configurations.values()
                 .stream()
                 .map(Map::entrySet)

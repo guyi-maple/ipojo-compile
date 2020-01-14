@@ -8,6 +8,7 @@ import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.event.EventExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.log.LoggerExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.service.BundleServiceReferenceExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.service.ServiceRegisterExpand;
+import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.timer.TimeCompileExpand;
 
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -27,7 +28,8 @@ public class CompileExpandFactory {
                 .add(new BundleServiceReferenceExpand())
                 .add(new ServiceRegisterExpand())
                 .add(new CoapExpand())
-                .add(new AwaiterExpand());
+                .add(new AwaiterExpand())
+                .add(new TimeCompileExpand());
     }
 
     public CompileExpandFactory add(CompileExpand expand){

@@ -22,7 +22,7 @@ public class ExportManifestExpand implements ManifestExpand {
                 .map(component -> {
                     try {
                         Service service = (Service) component.getClasses().getAnnotation(Service.class);
-                        if (service != null){
+                        if (service != null && service.export()){
                             return service.value().getPackage().getName();
                        }
                     } catch (ClassNotFoundException e) {

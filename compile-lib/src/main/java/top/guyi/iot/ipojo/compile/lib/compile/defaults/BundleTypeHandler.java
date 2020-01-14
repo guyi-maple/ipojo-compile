@@ -5,6 +5,7 @@ import top.guyi.iot.ipojo.application.bean.ComponentInfo;
 import top.guyi.iot.ipojo.application.bean.interfaces.ApplicationStartEvent;
 import top.guyi.iot.ipojo.application.bean.interfaces.ApplicationStartSuccessEvent;
 import top.guyi.iot.ipojo.application.bean.interfaces.ApplicationStopEvent;
+import top.guyi.iot.ipojo.application.bean.interfaces.InitializingBean;
 import top.guyi.iot.ipojo.application.osgi.DefaultApplicationActivator;
 import top.guyi.iot.ipojo.application.osgi.env.EnvMap;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.*;
@@ -61,6 +62,35 @@ public class BundleTypeHandler implements CompileTypeHandler {
 
         registerMethod.setBody(registerMethodBody.toString());
         activator.addMethod(registerMethod);
+
+        //实现afterPropertiesSet方法
+//        StringBuffer afterPropertiesSetMethodBody = new StringBuffer("{");
+//        CtClass initializingBeanClass = pool.get(InitializingBean.class.getName());
+//        components
+//                .stream()
+//                .filter(CompileClass::isComponent)
+//                .filter(component -> {
+//                    try {
+//                        return component.getClasses().subtypeOf(initializingBeanClass);
+//                    } catch (NotFoundException e) {
+//                        e.printStackTrace();
+//                        return false;
+//                    }
+//                })
+//                .forEach(component -> afterPropertiesSetMethodBody.append(
+//                        String.format(
+//                                "((%s)$1.get(%s.class,true)).afterPropertiesSet();\n",
+//                                InitializingBean.class.getName(),
+//                                component.getClasses().getName()
+//                        )
+//                ));
+//        afterPropertiesSetMethodBody.append("}");
+//        CtMethod afterPropertiesSetMethod = new CtMethod(CtClass.voidType,"onAfterPropertiesSet",new CtClass[]{
+//                pool.get(ApplicationContext.class.getName()),
+//                pool.get(BundleContext.class.getName())
+//        },activator);
+//        afterPropertiesSetMethod.setBody(afterPropertiesSetMethodBody.toString());
+//        activator.addMethod(afterPropertiesSetMethod);
 
         //实现onStart方法
         StringBuffer onStartMethodBody = new StringBuffer("{");
