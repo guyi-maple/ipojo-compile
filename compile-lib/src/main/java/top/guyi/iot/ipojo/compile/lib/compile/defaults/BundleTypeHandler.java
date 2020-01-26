@@ -18,6 +18,7 @@ import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Bundle编译处理器
@@ -51,12 +52,16 @@ public class BundleTypeHandler implements CompileTypeHandler {
         }, activator);
         // 继承拓展抽象类
         activator.setSuperclass(pool.get(DefaultApplicationActivator.class.getName()));
-        StringBuilder registerMethodBody = new StringBuilder("{\n");
 
         // 注册组件
-        components
+        Set<CompileClass> tmpComponents = components
                 .stream()
                 .filter(CompileClass::isComponent)
+                .collect(Collectors.toSet());
+        StringBuilder registerMethodBody = new StringBuilder("{\n");
+        tmpComponents
+                .stream()
+                .filter(component -> component.isRegister(pool,tmpComponents))
                 .forEach(component -> registerMethodBody.append(this.getRegisterMethod(component)));
         registerMethodBody.append("}\n");
 
