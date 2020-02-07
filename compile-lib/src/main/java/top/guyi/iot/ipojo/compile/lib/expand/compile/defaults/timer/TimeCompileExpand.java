@@ -15,6 +15,7 @@ import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Data
@@ -81,11 +82,13 @@ public class TimeCompileExpand implements CompileExpand {
 
         CtConstructor constructor = new CtConstructor(new CtClass[0],classes);
         constructor.setBody(String.format(
-                "{super(\"%s\",%s,%s.%s);}",
+                "{super(\"%s\",%s,%s.%s,%s.%s);}",
                 StringUtils.isEmpty(entry.getTimer().name()) ? UUID.randomUUID().toString() : entry.getTimer().name(),
                 entry.getTimer().delay(),
                 TimeType.class.getName(),
-                entry.getTimer().type().toString()
+                entry.getTimer().type().toString(),
+                TimeUnit.class.getName(),
+                entry.getTimer().unit().toString()
         ));
         classes.addConstructor(constructor);
 

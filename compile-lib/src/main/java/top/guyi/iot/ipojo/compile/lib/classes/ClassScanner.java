@@ -55,9 +55,10 @@ public class ClassScanner {
 
         Enumeration<URL> enumeration = pool.getClassLoader().getResources("component.info");
         while (enumeration.hasMoreElements()){
-            String json = IOUtils.toString(enumeration.nextElement().openStream(), StandardCharsets.UTF_8);
+            URL url = enumeration.nextElement();
+            String json = IOUtils.toString(url.openStream(), StandardCharsets.UTF_8);
             ComponentInfo componentInfo = this.gson.fromJson(json,ComponentInfo.class);
-            if (compile.getModules().contains(componentInfo.getName())){
+            if (!componentInfo.getName().equals(compile.getName()) && compile.getModules().contains(componentInfo.getName())){
                 for (ComponentEntry component : componentInfo.getComponents()) {
                     CtClass classes = pool.get(component.getClasses());
                     components.add(new CompileClass(classes,false,true,component.isProxy()));
