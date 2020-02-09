@@ -34,7 +34,7 @@
         <pluginRepository>
             <id>guyi</id>
             <name>guyi</name>
-            <url>http://nexus.guyi-maple.top/repository/maven-central/</url>
+            <url>http://nexus.guyi-maple.top/repository/maven-public/</url>
         </pluginRepository>
     </pluginRepositories>
 
@@ -47,7 +47,7 @@
         <repository>
             <id>guyi</id>
             <name>guyi</name>
-            <url>http://nexus.guyi-maple.top/repository/maven-central/</url>
+            <url>http://nexus.guyi-maple.top/repository/maven-public/</url>
         </repository>
     </repositories>
 
