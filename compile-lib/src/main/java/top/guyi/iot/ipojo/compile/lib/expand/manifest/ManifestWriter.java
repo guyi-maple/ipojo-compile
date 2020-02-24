@@ -40,6 +40,16 @@ public class ManifestWriter {
                         .values()
                         .stream()
                         .peek(manifest -> {
+                            if (manifest instanceof ListManifest && manifest.getKey().equals("Import-Package")){
+                                ((ListManifest) manifest).setList(
+                                        ((ListManifest) manifest).getList()
+                                                .stream()
+                                                .filter(value -> compile.getExclude().noneImport(value))
+                                                .collect(Collectors.toList())
+                                );
+                            }
+                        })
+                        .peek(manifest -> {
                             if (manifest instanceof ListManifest){
                                 compileManifest.put(manifest.getKey(),((ListManifest) manifest).getList());
                             }else{

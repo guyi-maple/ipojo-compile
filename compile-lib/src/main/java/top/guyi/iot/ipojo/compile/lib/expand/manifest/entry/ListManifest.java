@@ -13,6 +13,7 @@ public class ListManifest extends Manifest {
     @Setter
     private String endString = "";
     @Getter
+    @Setter
     private List<String> list = new LinkedList<>();
 
     public ListManifest add(String line){

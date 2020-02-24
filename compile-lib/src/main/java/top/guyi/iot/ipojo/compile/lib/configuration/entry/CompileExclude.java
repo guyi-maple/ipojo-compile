@@ -19,10 +19,19 @@ public class CompileExclude {
     private Set<String> exportPackage = Collections.emptySet();
 
     @Expose
+    @SerializedName("import")
+    private Set<String> importPackage = Collections.emptySet();
+
+    @Expose
     private Set<String> dependencyScope = Collections.emptySet();
 
     public boolean noneExport(String packageName){
         return this.exportPackage.stream()
+                .noneMatch(name -> Pattern.matches(name,packageName));
+    }
+
+    public boolean noneImport(String packageName){
+        return this.importPackage.stream()
                 .noneMatch(name -> Pattern.matches(name,packageName));
     }
 
