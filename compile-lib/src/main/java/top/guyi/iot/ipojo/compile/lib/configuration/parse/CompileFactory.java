@@ -2,14 +2,17 @@ package top.guyi.iot.ipojo.compile.lib.configuration.parse;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import javassist.ClassPool;
 import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.exception.CompileInfoCheckException;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -48,20 +51,44 @@ public class CompileFactory {
         return new URLClassLoader(urls.toArray(new URL[0]));
     }
 
-    public Compile create(Project project) throws IOException, CompileInfoCheckException {
+    private void addDependencies(Map<String,Object> configuration,Project project,ClassPool pool){
+        try{
+            if (configuration.containsKey("project")){
+                Project new_project = this.gson.fromJson(
+                        this.gson.toJson(configuration.get("project")),
+                        Project.class
+                );
+                project.extend(new_project,false);
+            }
+
+            URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+            Method add = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+            add.setAccessible(true);
+            // 添加编译期依赖
+            add.invoke(classLoader,new URL(String.format("file:///%s",project.getWork())));
+            for (Dependency dependency : project.getDependencies()) {
+                pool.appendClassPath(dependency.get(project));
+                add.invoke(classLoader,dependency.getURL(project));
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public Compile create(Project project, ClassPool pool) throws IOException, CompileInfoCheckException {
         File file = new File(project.getWork() + "/compile.info");
         if (!file.exists()){
             file = new File(project.getBaseDir() + "/compile.info");
         }
 
-        Compile compile = this.create(file,project);
+        Compile compile = this.create(file,project,pool);
         compile.setType(Optional.ofNullable(compile.getType()).orElse(CompileType.COMPONENT));
         compile.getProject().extend(project);
 
         return compile;
     }
 
-    public Compile create(File file,Project project) throws IOException, CompileInfoCheckException {
+    public Compile create(File file, Project project, ClassPool pool) throws IOException, CompileInfoCheckException {
         if (!file.exists()){
             return null;
         }
@@ -76,8 +103,6 @@ public class CompileFactory {
         CompileType.getByValue(configuration.getOrDefault("type","component").toString())
                 .orElseThrow(() -> new RuntimeException("错误的编译类型"));
 
-        getExtendConfiguration(configuration,getAllConfiguration(configuration,project));
-
         if (configuration.containsKey("profile")){
             if (configuration.get("profile") instanceof List){
                 extendProfile(configuration,new HashSet<>((List<String>)configuration.get("profile")),project);
@@ -85,6 +110,10 @@ public class CompileFactory {
                 extendProfile(configuration,Collections.singleton(configuration.get("profile").toString()),project);
             }
         }
+
+        this.addDependencies(configuration,project,pool);
+
+        getExtendConfiguration(configuration,getAllConfiguration(configuration,project));
 
         Compile compile = CompileFormat.format(configuration);
         project.getDependencies().addAll(compile.getDependencies());

@@ -49,21 +49,11 @@ public class CompileExecutor {
      * @throws Exception
      */
     public Optional<Compile> execute(Project project) throws Exception {
-        Compile compile = compileFactory.create(project);
+        ClassPool pool = ClassPool.getDefault();
+        Compile compile = compileFactory.create(project,pool);
 
         if (compile != null){
-            ClassPool pool = ClassPool.getDefault();
             pool.appendClassPath(compile.getProject().getWork());
-
-            URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-            Method add = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-            add.setAccessible(true);
-//             添加编译期依赖
-            add.invoke(classLoader,new URL(String.format("file:///%s",compile.getProject().getWork())));
-            for (Dependency dependency : project.getDependencies()) {
-                pool.appendClassPath(dependency.get(project));
-                add.invoke(classLoader,dependency.getURL(project));
-            }
 
             // 获取组件列表
             Set<CompileClass> components = this.compiler.compile(pool,compile);

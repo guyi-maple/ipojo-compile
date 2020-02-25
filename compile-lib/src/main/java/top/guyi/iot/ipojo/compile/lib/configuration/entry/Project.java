@@ -36,9 +36,14 @@ public class Project {
     }
 
     public void extend(Project project){
-        this.work = project.work;
-        this.baseDir = project.baseDir;
-        this.sourceDir = project.sourceDir;
+        this.extend(project,true);
+    }
+    public void extend(Project project,boolean override){
+        if (override){
+            this.work = project.work;
+            this.baseDir = project.getBaseDir();
+            this.sourceDir = project.getSourceDir();
+        }
 
         if (StringUtils.isEmpty(output)){
             this.output = project.output;
@@ -55,7 +60,9 @@ public class Project {
         if (StringUtils.isEmpty(artifactId)){
             this.artifactId = project.artifactId;
         }
-
+        if (StringUtils.isEmpty(repository)){
+            this.repository = project.repository;
+        }
         if (project.getDependencies() != null && project.getDependencies().size() > 0){
             Set<Dependency> dependencies = new HashSet<>(this.dependencies);
             dependencies.addAll(project.dependencies);
