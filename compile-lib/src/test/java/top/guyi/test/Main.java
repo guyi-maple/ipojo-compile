@@ -15,7 +15,7 @@ public class Main {
         Project project = new Project();
         project.setWork("/Users/guyi/Documents/Work/Java/iot-1.3-group/ipojo-test/target/classes");
         project.setOutput("/Users/guyi/Documents/Work/Java/iot-1.3-group/ipojo-test/target/compile");
-        project.setRepository("/Users/guyi/.m2/repository");
+        project.setLocalRepository("/Users/guyi/.m2/repository");
         Dependency dependency = new Dependency(
                 "top.guyi.iot.ipojo",
                 "ipojo",

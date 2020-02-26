@@ -1,6 +1,7 @@
 package top.guyi.iot.compile.maven.mojo;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.eclipse.aether.repository.RemoteRepository;
 import top.guyi.iot.ipojo.compile.lib.CompileExecutor;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import org.apache.maven.execution.MavenSession;
@@ -15,6 +16,7 @@ import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Repository;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,6 +28,8 @@ public class CompileMojo extends AbstractMojo {
     private MavenProject project;
     @Parameter(property = "session")
     private MavenSession session;
+    @Parameter(property = "project.remoteProjectRepositories")
+    private List<RemoteRepository> remoteRepos;
     @Component
     private DependencyGraphBuilder builder;
 
@@ -53,8 +57,16 @@ public class CompileMojo extends AbstractMojo {
         project.setDependencies(this.getDependency());
         project.setBaseDir(this.project.getBasedir().getAbsolutePath());
         project.setWork(this.project.getBuild().getOutputDirectory());
-        project.setRepository(session.getRepositorySession().getLocalRepository().getBasedir().getAbsolutePath());
-
+        project.setLocalRepository(session.getRepositorySession().getLocalRepository().getBasedir().getAbsolutePath());
+        project.setRepositories(
+                this.remoteRepos
+                        .stream()
+                        .map(repo -> new Repository(
+                                repo.getId(),
+                                repo.getContentType(),
+                                repo.getUrl())
+                        ).collect(Collectors.toList())
+        );
         return project;
     }
 

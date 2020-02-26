@@ -4,12 +4,31 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javassist.ClassPool;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.SyncContext;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.collection.CollectResult;
+import org.eclipse.aether.collection.DependencyCollectionException;
+import org.eclipse.aether.deployment.DeployRequest;
+import org.eclipse.aether.deployment.DeployResult;
+import org.eclipse.aether.deployment.DeploymentException;
+import org.eclipse.aether.installation.InstallRequest;
+import org.eclipse.aether.installation.InstallResult;
+import org.eclipse.aether.installation.InstallationException;
+import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.LocalRepositoryManager;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.*;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.exception.CompileInfoCheckException;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
+import top.guyi.iot.ipojo.compile.lib.maven.MavenHelper;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -58,7 +77,18 @@ public class CompileFactory {
                         this.gson.toJson(configuration.get("project")),
                         Project.class
                 );
-                project.extend(new_project,false);
+                if (new_project.getRepositories().isEmpty()){
+                    new_project.setRepositories(project.getRepositories());
+                }
+                if (StringUtils.isEmpty(new_project.getLocalRepository())){
+                    new_project.setLocalRepository(project.getLocalRepository());
+                }
+                Set<Dependency> dependencies = new HashSet<>();
+                new_project.getDependencies()
+                        .forEach(dependency ->
+                                dependencies.addAll(MavenHelper.getDependencies(new_project,dependency)));
+
+                project.getDependencies().addAll(dependencies);
             }
 
             URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
@@ -125,8 +155,10 @@ public class CompileFactory {
     }
 
     private void extendProfile(Map<String,Object> configuration, Set<String> profileNames,Project project) throws IOException {
+        Set<String> names = new HashSet<>(profileNames);
+        names.add("default");
         ClassLoader loader = this.getClassLoader(project);
-        for (String name : profileNames) {
+        for (String name : names) {
             InputStream inputStream = loader.getResourceAsStream(String.format("%s.profile",name));
             if (inputStream != null){
                 Map<String,Object> profileConfiguration = this.gson.fromJson(

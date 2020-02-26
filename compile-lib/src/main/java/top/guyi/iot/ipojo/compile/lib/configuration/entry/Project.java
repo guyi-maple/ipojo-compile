@@ -3,10 +3,7 @@ package top.guyi.iot.ipojo.compile.lib.configuration.entry;
 import lombok.Data;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Data
 public class Project {
@@ -21,7 +18,8 @@ public class Project {
     private String groupId;
     private String artifactId;
 
-    private String repository;
+    private String localRepository;
+    private List<Repository> repositories = Collections.emptyList();
 
     private Set<Dependency> dependencies = Collections.emptySet();
 
@@ -60,8 +58,11 @@ public class Project {
         if (StringUtils.isEmpty(artifactId)){
             this.artifactId = project.artifactId;
         }
-        if (StringUtils.isEmpty(repository)){
-            this.repository = project.repository;
+        if (StringUtils.isEmpty(localRepository)){
+            this.localRepository = project.localRepository;
+        }
+        if (repositories.isEmpty()){
+            this.repositories = project.repositories;
         }
         if (project.getDependencies() != null && project.getDependencies().size() > 0){
             Set<Dependency> dependencies = new HashSet<>(this.dependencies);

@@ -1,6 +1,5 @@
 package top.guyi.iot.ipojo.compile.lib.configuration.entry;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.net.MalformedURLException;
@@ -8,14 +7,12 @@ import java.net.URL;
 import java.util.Objects;
 
 @Data
-@AllArgsConstructor
 public class Dependency {
 
     private String groupId;
     private String artifactId;
     private String version;
     private String scope;
-    private String url;
 
     public Dependency(String groupId, String artifactId, String version, String scope) {
         this.groupId = groupId;
@@ -33,33 +30,19 @@ public class Dependency {
     }
 
     public String get(Project project){
-        if (this.url == null){
-            this.url = String.format(
-                    "%s/%s/%s/%s/%s-%s.jar",
-                    project.getRepository(),
-                    groupId.replaceAll("\\.", "/"),
-                    artifactId,
-                    version,
-                    artifactId,
-                    version
-            );
-        }
-        return url;
+        return String.format(
+                "%s/%s/%s/%s/%s-%s.jar",
+                project.getLocalRepository(),
+                groupId.replaceAll("\\.", "/"),
+                artifactId,
+                version,
+                artifactId,
+                version
+        );
     }
 
     public URL getURL(Project project) throws MalformedURLException {
-        if (this.url == null){
-            this.url = String.format(
-                    "%s/%s/%s/%s/%s-%s.jar",
-                    project.getRepository(),
-                    groupId.replaceAll("\\.", "/"),
-                    artifactId,
-                    version,
-                    artifactId,
-                    version
-            );
-        }
-        return url.contains(":") ? new URL(url) : new URL(String.format("file:///%s",url));
+        return new URL(String.format("file:///%s",this.get(project)));
     }
 
     @Override
