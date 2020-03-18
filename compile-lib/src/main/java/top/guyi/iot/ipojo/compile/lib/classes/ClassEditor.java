@@ -33,7 +33,7 @@ public class ClassEditor {
 
     public String getInjectMethodBody(ClassPool pool,CtClass classes) throws NotFoundException {
         StringBuilder sb = new StringBuilder("{");
-        JavassistUtils.getFields(pool.get(Object.class.getName()),classes,field -> {
+        List<FieldEntry> fields = JavassistUtils.getFields(pool.get(Object.class.getName()),classes,field -> {
             try {
                 Resource resource = (Resource) field.getAnnotation(Resource.class);
                 if (resource != null){
@@ -43,11 +43,20 @@ public class ClassEditor {
                         return new FieldEntry(field,resource.name(),resource.equals());
                     }
                 }
+                javax.annotation.Resource r = (javax.annotation.Resource) field.getAnnotation(javax.annotation.Resource.class);
+                if (r != null){
+                    if (StringUtils.isEmpty(r.name())){
+                        return new FieldEntry(field,false);
+                    }else{
+                        return new FieldEntry(field,r.name(),false);
+                    }
+                }
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
             return null;
-        }).stream()
+        });
+        fields.stream()
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
                     FieldInjector injector = injectorFactory.get(field,pool);
