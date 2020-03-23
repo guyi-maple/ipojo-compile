@@ -15,6 +15,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * @author guyi
+ * 配置拓展
+ */
 public class ConfigurationExpand implements CompileExpand {
 
     @Override

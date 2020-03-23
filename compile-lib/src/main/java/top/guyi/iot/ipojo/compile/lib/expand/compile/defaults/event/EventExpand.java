@@ -2,17 +2,17 @@ package top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.event;
 
 import javassist.*;
 import top.guyi.iot.ipojo.application.ApplicationContext;
+import top.guyi.iot.ipojo.application.osgi.event.AbstractEventPublisher;
+import top.guyi.iot.ipojo.application.osgi.event.AbstractEventRegister;
 import top.guyi.iot.ipojo.application.osgi.event.NativeEvent;
 import top.guyi.iot.ipojo.application.osgi.event.annotation.ListenNativeEvent;
 import top.guyi.iot.ipojo.application.osgi.event.interfaces.defaults.DefaultEventConverter;
-import top.guyi.iot.ipojo.application.osgi.event.EventPublisher;
-import top.guyi.iot.ipojo.application.osgi.event.EventRegister;
 import top.guyi.iot.ipojo.application.osgi.event.annotation.ListenEvent;
 import top.guyi.iot.ipojo.application.osgi.event.interfaces.Event;
 import top.guyi.iot.ipojo.application.osgi.event.interfaces.EventConverter;
 import top.guyi.iot.ipojo.application.osgi.event.interfaces.EventListener;
-import top.guyi.iot.ipojo.application.osgi.event.invoker.MethodEventInvoker;
-import top.guyi.iot.ipojo.application.osgi.event.invoker.MethodNativeEventInvoker;
+import top.guyi.iot.ipojo.application.osgi.event.invoker.AbstractMethodEventInvoker;
+import top.guyi.iot.ipojo.application.osgi.event.invoker.AbstractMethodNativeEventInvoker;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
@@ -24,6 +24,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * @author guyi
+ * 事件拓展
+ */
 public class EventExpand implements CompileExpand {
 
     @Override
@@ -48,8 +52,8 @@ public class EventExpand implements CompileExpand {
 
     @Override
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
-        CtClass register = pool.makeClass(String.format("%s.DefaultEventRegister", compile.getPackageName()));
-        register.setSuperclass(pool.get(EventRegister.class.getName()));
+        CtClass register = pool.makeClass(String.format("%s.event.DefaultEventRegister", compile.getPackageName()));
+        register.setSuperclass(pool.get(AbstractEventRegister.class.getName()));
         components.add(new CompileClass("DefaultEventRegister",register,true,true,false,998));
 
         this.setConverter(register,pool,components);
@@ -61,8 +65,8 @@ public class EventExpand implements CompileExpand {
 
     private void setPublisher(ClassPool pool, Set<CompileClass> components, Compile compile) throws NotFoundException, CannotCompileException {
         List<CtClass> converters = this.getConverter(pool,components);
-        CtClass superClass = pool.get(EventPublisher.class.getName());
-        CtClass publisher = pool.makeClass(String.format("%s.AutoEventPublisher", compile.getPackageName()));
+        CtClass superClass = pool.get(AbstractEventPublisher.class.getName());
+        CtClass publisher = pool.makeClass(String.format("%s.event.AutoEventPublisher", compile.getPackageName()));
         publisher.setSuperclass(superClass);
         CtMethod setMethod = new CtMethod(CtClass.voidType,"setAllEventConverter",new CtClass[0],publisher);
         setMethod.setModifiers(Modifier.PROTECTED);
@@ -153,6 +157,7 @@ public class EventExpand implements CompileExpand {
                     pool.get(Event.class.getName())
             },invoker);
         }
+        invokeMethod.setExceptionTypes(new CtClass[]{pool.get(Exception.class.getName())});
         invokeMethod.setModifiers(Modifier.PROTECTED);
         invoker.addMethod(invokeMethod);
 
@@ -207,10 +212,10 @@ public class EventExpand implements CompileExpand {
         if (listenEvent != null){
             CtClass eventClass = pool.get(listenEvent.value().getName());
             CtClass invoker = pool.makeClass(String.format(
-                    "%s.MethodEventInvoker%s",
+                    "%s.event.invoker.MethodEventInvoker%s",
                     compile.getPackageName(),
                     UUID.randomUUID().toString().replaceAll("-","")));
-            invoker.setSuperclass(pool.get(MethodEventInvoker.class.getName()));
+            invoker.setSuperclass(pool.get(AbstractMethodEventInvoker.class.getName()));
             this.invokeMethod(
                     invoker,
                     component.getClasses(),
@@ -219,7 +224,7 @@ public class EventExpand implements CompileExpand {
                     pool,false);
             setMethodBody.append(String.format(
                     "$0.registerMethodListener($0.bundleContext,(%s)new %s(%s.class,$0.applicationContext));\n",
-                    MethodEventInvoker.class.getName(),
+                    AbstractMethodEventInvoker.class.getName(),
                     invoker.getName(),
                     eventClass.getName()
             ));
@@ -232,10 +237,10 @@ public class EventExpand implements CompileExpand {
         ListenNativeEvent listenEvent = (ListenNativeEvent) method.getAnnotation(ListenNativeEvent.class);
         if (listenEvent != null){
             CtClass invoker = pool.makeClass(String.format(
-                    "%s.MethodNativeEventInvoker%s",
+                    "%s.event.invoker.MethodNativeEventInvoker%s",
                     compile.getPackageName(),
                     UUID.randomUUID().toString().replaceAll("-","")));
-            invoker.setSuperclass(pool.get(MethodNativeEventInvoker.class.getName()));
+            invoker.setSuperclass(pool.get(AbstractMethodNativeEventInvoker.class.getName()));
             this.invokeMethod(
                     invoker,
                     component.getClasses(),
@@ -244,7 +249,7 @@ public class EventExpand implements CompileExpand {
                     pool,true);
             setMethodBody.append(String.format(
                     "$0.registerNativeMethodListener($0.bundleContext,(%s)new %s(\"%s\",$0.applicationContext));\n",
-                    MethodNativeEventInvoker.class.getName(),
+                    AbstractMethodNativeEventInvoker.class.getName(),
                     invoker.getName(),
                     listenEvent.value()
             ));

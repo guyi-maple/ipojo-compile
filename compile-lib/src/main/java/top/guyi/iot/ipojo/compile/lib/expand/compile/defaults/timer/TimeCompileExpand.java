@@ -7,7 +7,7 @@ import top.guyi.iot.ipojo.application.ApplicationContext;
 import top.guyi.iot.ipojo.application.osgi.timer.AbstractTimerManager;
 import top.guyi.iot.ipojo.application.osgi.timer.TimerRunnable;
 import top.guyi.iot.ipojo.application.osgi.timer.annotation.Timer;
-import top.guyi.iot.ipojo.application.osgi.timer.defaults.MethodTimerRunnable;
+import top.guyi.iot.ipojo.application.osgi.timer.defaults.AbstractMethodTimerRunnable;
 import top.guyi.iot.ipojo.application.osgi.timer.enums.TimeType;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
@@ -28,6 +28,10 @@ class TimerEntry {
 
 }
 
+/**
+ * @author guyi
+ * 定时器拓展
+ */
 public class TimeCompileExpand implements CompileExpand {
 
     @Override
@@ -53,37 +57,40 @@ public class TimeCompileExpand implements CompileExpand {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        CtClass timerRegister = pool.makeClass(String.format("%s.DefaultTimeManager",compile.getPackageName()));
-        timerRegister.setSuperclass(pool.get(AbstractTimerManager.class.getName()));
-        CtMethod registerAll = new CtMethod(CtClass.voidType,"registerAll",new CtClass[0],timerRegister);
-        StringBuilder registerMethodBody = new StringBuilder("{\n");
-        for (TimerEntry timer : timers) {
-            CtClass run = this.createTimerRunnable(compile,pool,timer);
-            components.add(new CompileClass(run,false,false,false));
-            run.writeFile(compile.getProject().getWork());
-            registerMethodBody.append(String.format(
-                    "$0.register((%s)new %s());\n",
-                    TimerRunnable.class.getName(),
-                    run.getName()
-            ));
+        if (!timers.isEmpty()) {
+            CtClass timerRegister = pool.makeClass(String.format("%s.timer.DefaultTimeManager",compile.getPackageName()));
+            timerRegister.setSuperclass(pool.get(AbstractTimerManager.class.getName()));
+            CtMethod registerAll = new CtMethod(CtClass.voidType,"registerAll",new CtClass[0],timerRegister);
+            StringBuilder registerMethodBody = new StringBuilder("{\n");
+            for (TimerEntry timer : timers) {
+                CtClass run = this.createTimerRunnable(compile,pool,timer);
+                components.add(new CompileClass(run,false,false,false));
+                run.writeFile(compile.getProject().getWork());
+                registerMethodBody.append(String.format(
+                        "$0.register((%s)new %s());\n",
+                        TimerRunnable.class.getName(),
+                        run.getName()
+                ));
+            }
+            registerMethodBody.append("}");
+            registerAll.setBody(registerMethodBody.toString());
+            timerRegister.addMethod(registerAll);
+            components.add(new CompileClass(timerRegister,true));
         }
-        registerMethodBody.append("}");
-        registerAll.setBody(registerMethodBody.toString());
-        timerRegister.addMethod(registerAll);
-        components.add(new CompileClass(timerRegister,true));
 
         return components;
     }
 
     private CtClass createTimerRunnable(Compile compile,ClassPool pool,TimerEntry entry) throws NotFoundException, CannotCompileException {
-        String classesName = String.format("%s.TimerRunnable%s",compile.getPackageName(),UUID.randomUUID().toString().replaceAll("-",""));
+        String classesName = String.format("%s.timer.runnable.TimerRunnable%s",compile.getPackageName(),UUID.randomUUID().toString().replaceAll("-",""));
         CtClass classes = pool.makeClass(classesName);
-        classes.setSuperclass(pool.get(MethodTimerRunnable.class.getName()));
+        classes.setSuperclass(pool.get(AbstractMethodTimerRunnable.class.getName()));
 
         CtConstructor constructor = new CtConstructor(new CtClass[0],classes);
         constructor.setBody(String.format(
-                "{super(\"%s\",%s,%s.%s,%s.%s);}",
+                "{super(\"%s\",%s,%s,%s.%s,%s.%s);}",
                 StringUtils.isEmpty(entry.getTimer().name()) ? UUID.randomUUID().toString() : entry.getTimer().name(),
+                entry.getTimer().initDelay(),
                 entry.getTimer().delay(),
                 TimeType.class.getName(),
                 entry.getTimer().type().toString(),

@@ -1,5 +1,6 @@
 package top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.service;
 
+import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
 import top.guyi.iot.ipojo.application.ApplicationContext;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
@@ -14,6 +15,16 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@AllArgsConstructor
+class BundleServiceReferenceEntry {
+    CompileClass component;
+    CtMethod method;
+}
+
+/**
+ * @author guyi
+ * 服务获取拓展
+ */
 public class BundleServiceReferenceExpand implements CompileExpand {
 
     @Override
@@ -28,12 +39,18 @@ public class BundleServiceReferenceExpand implements CompileExpand {
 
     @Override
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
-        StringBuilder methodBody = new StringBuilder("{\n");
-
-        Set<CompileClass> add = new HashSet<>();
+        List<BundleServiceReferenceEntry> entries = new LinkedList<>();
         for (CompileClass component : components) {
             for (CtMethod method : this.getMethods(component.getClasses())) {
-                BundleServiceReference reference = (BundleServiceReference) method.getAnnotation(BundleServiceReference.class);
+                entries.add(new BundleServiceReferenceEntry(component,method));
+            }
+        }
+
+        if (!entries.isEmpty()){
+            StringBuilder methodBody = new StringBuilder("{\n");
+            Set<CompileClass> add = new HashSet<>();
+            for (BundleServiceReferenceEntry entry : entries) {
+                BundleServiceReference reference = (BundleServiceReference) entry.method.getAnnotation(BundleServiceReference.class);
 
                 String checker = "null";
                 if (reference.checker() != BundleServiceReferenceChecker.class){
@@ -44,27 +61,27 @@ public class BundleServiceReferenceExpand implements CompileExpand {
                         "$0.register(new %s(%s,%s,%s));\n",
                         ServiceReferenceEntry.class.getName(),
                         this.getClassString(reference),
-                        this.invokerMethod(pool,add,component.getClasses(),method, compile),
+                        this.invokerMethod(pool,add,entry.component.getClasses(),entry.method, compile),
                         checker
                 ));
             }
+
+            methodBody.append("}");
+
+            CtClass listener = pool.makeClass(String.format("%s.service.AutoDefaultBundleServiceListener", compile.getPackageName()));
+            listener.setSuperclass(pool.get(AbstractBundleServiceListener.class.getName()));
+
+            CtMethod registerAll = new CtMethod(CtClass.voidType,"registerAll",new CtClass[]{
+                    pool.get(ApplicationContext.class.getName())
+            },listener);
+
+            registerAll.setBody(methodBody.toString());
+
+            listener.addMethod(registerAll);
+
+            components.add(new CompileClass("AutoDefaultBundleServiceListener",listener,true,true,false,1000));
+            components.addAll(add);
         }
-
-        methodBody.append("}");
-
-        CtClass listener = pool.makeClass(String.format("%s.AutoDefaultBundleServiceListener", compile.getPackageName()));
-        listener.setSuperclass(pool.get(AbstractBundleServiceListener.class.getName()));
-
-        CtMethod registerAll = new CtMethod(CtClass.voidType,"registerAll",new CtClass[]{
-                pool.get(ApplicationContext.class.getName())
-        },listener);
-
-        registerAll.setBody(methodBody.toString());
-
-        listener.addMethod(registerAll);
-
-        components.add(new CompileClass("AutoDefaultBundleServiceListener",listener,true,true,false,1000));
-        components.addAll(add);
 
         return components;
     }
@@ -86,10 +103,10 @@ public class BundleServiceReferenceExpand implements CompileExpand {
     }
 
     private String invokerMethod(ClassPool pool,Set<CompileClass> add,CtClass component, CtMethod method, Compile compile) throws NotFoundException, CannotCompileException, IOException {
-        String className = String.format("%s.ServiceReferenceInvoker%s", compile.getPackageName(), DigestUtils.md5Hex(UUID.randomUUID().toString()));
+        String className = String.format("%s.service.invoker.ServiceReferenceInvoker%s", compile.getPackageName(), DigestUtils.md5Hex(UUID.randomUUID().toString()));
 
         CtClass invoker = pool.makeClass(className);
-        invoker.setSuperclass(pool.get(ServiceReferenceInvoker.class.getName()));
+        invoker.setSuperclass(pool.get(AbstractServiceReferenceInvoker.class.getName()));
         CtMethod invoke = new CtMethod(CtClass.voidType,"invoke",new CtClass[]{
                 pool.get(ServiceReferenceEntry.class.getName()),
                 pool.get(ApplicationContext.class.getName()),

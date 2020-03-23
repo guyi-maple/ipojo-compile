@@ -36,6 +36,10 @@ class CoapMethodEntry{
     }
 }
 
+/**
+ * @author guyi
+ * Coap服务扩展
+ */
 public class CoapExpand implements CompileExpand {
 
     @Override
@@ -98,13 +102,25 @@ public class CoapExpand implements CompileExpand {
         }
     }
 
+    /**
+     * 获取Coap-Resource注册树
+     * @param map
+     * @param pool
+     * @param components
+     * @param compile
+     * @return
+     * @throws CannotCompileException
+     * @throws NotFoundException
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     private String getResourceTree(Map<String,List<CoapMethodEntry>> map,ClassPool pool,Set<CompileClass> components,Compile compile) throws CannotCompileException, NotFoundException, IOException, ClassNotFoundException {
         Map<String[],List<CoapMethodEntry>> treeMap = map.entrySet()
                 .stream()
                 .collect(Collectors.toMap(e -> e.getKey().split("/"), Map.Entry::getValue));
 
         List<String[]> keys = new LinkedList<>(treeMap.keySet());
-        Collections.sort(keys,Comparator.comparingInt(key -> key.length));
+        keys.sort(Comparator.comparingInt(key -> key.length));
 
         StringBuilder body = new StringBuilder("{\n");
 
@@ -137,8 +153,6 @@ public class CoapExpand implements CompileExpand {
 
     @Override
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
-        components.add(new CompileClass(pool.get(CoapCurrent.class.getName())));
-
         Map<String,List<CoapMethodEntry>> entryMap = new HashMap<>();
         components
                 .stream()
@@ -163,25 +177,36 @@ public class CoapExpand implements CompileExpand {
                     }
                 });
 
-
-        CtClass manager = pool.makeClass(String.format("%s.DefaultCoapServerManager",compile.getPackageName()));
-        manager.setSuperclass(pool.get(CoapServerManager.class.getName()));
-        CtMethod method = new CtMethod(CtClass.voidType,"registerMapping",new CtClass[]{
-                pool.get(CoapServer.class.getName()),
-                pool.get(ApplicationContext.class.getName())
-        },manager);
-        method.setBody(this.getResourceTree(entryMap,pool,components,compile));
-        manager.addMethod(method);
-
-        manager.writeFile(compile.getProject().getOutput());
-
-        components.add(new CompileClass(manager,false));
-
+        if (!entryMap.isEmpty()) {
+            components.add(new CompileClass(pool.get(CoapCurrent.class.getName())));
+            CtClass manager = pool.makeClass(String.format("%s.coap.DefaultCoapServerManager",compile.getPackageName()));
+            manager.setSuperclass(pool.get(CoapServerManager.class.getName()));
+            CtMethod method = new CtMethod(CtClass.voidType,"registerMapping",new CtClass[]{
+                    pool.get(CoapServer.class.getName()),
+                    pool.get(ApplicationContext.class.getName())
+            },manager);
+            method.setBody(this.getResourceTree(entryMap,pool,components,compile));
+            manager.addMethod(method);
+            manager.writeFile(compile.getProject().getOutput());
+            components.add(new CompileClass(manager,false));
+        }
         return components;
     }
 
+    /**
+     * 创建Coap-Resource包装器
+     * @param methods 目标方法实体列表
+     * @param pool
+     * @param components
+     * @param compile
+     * @return
+     * @throws NotFoundException
+     * @throws CannotCompileException
+     * @throws ClassNotFoundException
+     * @throws IOException
+     */
     private CtClass makeCoapHandlerDecorator(List<CoapMethodEntry> methods,ClassPool pool,Set<CompileClass> components,Compile compile) throws NotFoundException, CannotCompileException, ClassNotFoundException, IOException {
-        CtClass decorator = pool.makeClass(String.format("%s.CoapHandlerDecorator%s",compile.getPackageName(),UUID.randomUUID().toString().replaceAll("-","")));
+        CtClass decorator = pool.makeClass(String.format("%s.coap.decorators.CoapHandlerDecorator%s",compile.getPackageName(),UUID.randomUUID().toString().replaceAll("-","")));
         decorator.setSuperclass(pool.get(CoapHandlerDecorator.class.getName()));
 
         CtConstructor constructor = new CtConstructor(new CtClass[]{
@@ -193,7 +218,7 @@ public class CoapExpand implements CompileExpand {
 
         StringBuilder methodBody = new StringBuilder("{\n");
         for (CoapMethodEntry method : methods) {
-            CtClass invoker = this.makeCoapInvoker(method,pool,components,compile);
+            CtClass invoker = this.makeCoapInvoker(method,pool,compile);
             methodBody.append(String.format(
                     "$0.register(%s.%s,new %s());\n",
                     CoapMethod.class.getName(),
@@ -214,8 +239,18 @@ public class CoapExpand implements CompileExpand {
         return decorator;
     }
 
-    private CtClass makeCoapInvoker(CoapMethodEntry method,ClassPool pool,Set<CompileClass> components,Compile compile) throws NotFoundException, CannotCompileException, IOException {
-        CtClass invoker = pool.makeClass(String.format("%s.CoapInvoker%s",compile.getPackageName(),UUID.randomUUID().toString().replaceAll("-","")));
+    /**
+     * 创建Coap执行器
+     * @param method 目标方法实体
+     * @param pool
+     * @param compile
+     * @return
+     * @throws NotFoundException
+     * @throws CannotCompileException
+     * @throws IOException
+     */
+    private CtClass makeCoapInvoker(CoapMethodEntry method,ClassPool pool,Compile compile) throws NotFoundException, CannotCompileException, IOException {
+        CtClass invoker = pool.makeClass(String.format("%s.coap.invokers.CoapInvoker%s",compile.getPackageName(),UUID.randomUUID().toString().replaceAll("-","")));
         invoker.addInterface(pool.get(CoapResourceInvoker.class.getName()));
         CtClass type = method.getMethod().getParameterTypes()[0];
 
