@@ -7,7 +7,7 @@ public class ComponentEntry {
 
     private String type = "classes";
     private String classes;
-    private boolean proxy = true;
+    private boolean proxy = false;
 
     public ComponentEntry(String classes) {
         this.classes = classes;

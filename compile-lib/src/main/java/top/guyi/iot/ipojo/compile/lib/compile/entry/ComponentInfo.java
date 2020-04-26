@@ -9,5 +9,6 @@ public class ComponentInfo {
 
     private String name;
     private Set<ComponentEntry> components;
+    private Set<ComponentEntry> useComponents;
 
 }

@@ -21,7 +21,7 @@ public class ClassCompiler {
                 .stream()
                 .map(component -> {
                     try {
-                        editor.addInjectMethod(pool,component.getClasses());
+                        editor.addInjectMethod(pool,component.getClasses(),compile);
                         return component;
                     } catch (CannotCompileException | NotFoundException e) {
                         e.printStackTrace();

@@ -13,19 +13,18 @@ import org.eclipse.aether.graph.DependencyVisitor;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.transfer.ArtifactNotFoundException;
+import org.eclipse.aether.util.repository.AuthenticationBuilder;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.maven.util.Booter;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class MavenHelper {
 
-    public static void main(String[] args) throws DependencyCollectionException {
+    public static void main(String[] args)  {
         getDependencies(new Project(),new top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency(
                 "com.robotaiot.iot.api.gateway",
                 "iot-gateway-api-andlink",
@@ -49,12 +48,23 @@ public class MavenHelper {
                 request.setRepositories(
                         project.getRepositories()
                                 .stream()
-                                .map(repo -> new RemoteRepository.Builder(
-                                        repo.getId(),
-                                        repo.getType(),
-                                        repo.getUrl())
-                                        .build()
-                                ).collect(Collectors.toList())
+                                .map(repo -> {
+                                    RemoteRepository.Builder builder = new RemoteRepository.Builder(
+                                            repo.getId(),
+                                            repo.getType(),
+                                            repo.getUrl());
+                                    project.getServers().stream()
+                                            .filter(server -> server.getId().equals(repo.getId()))
+                                            .findFirst()
+                                            .ifPresent(server -> builder.setAuthentication(
+                                                    new AuthenticationBuilder()
+                                                            .addUsername(server.getUsername())
+                                                            .addPassword(server.getPassword())
+                                                            .build()
+                                                    )
+                                            );
+                                    return builder.build();
+                                }).collect(Collectors.toList())
                 );
             }
 
@@ -82,14 +92,14 @@ public class MavenHelper {
 
             dependencies
                     .stream()
-                    .filter(dependency -> {
+                    .filter(dependency -> dependency.getURL(project).map(url -> {
                         try {
-                            return !new File(dependency.getURL(project).toURI()).exists();
-                        } catch (MalformedURLException | URISyntaxException e) {
+                            return !new File(url.toURI()).exists();
+                        } catch (URISyntaxException e) {
                             e.printStackTrace();
                             return false;
                         }
-                    })
+                    }).orElse(false))
                     .forEach(dependency -> {
                         try {
                             Artifact tmp = new DefaultArtifact(dependency.getName());

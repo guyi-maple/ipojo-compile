@@ -40,14 +40,16 @@ public class DependencyManifestExpand implements ManifestExpand {
             File root = new File(compile.getProject().getOutput() + "/lib");
             if (root.mkdirs()){
                 for (Dependency dependency : dependencies) {
-                    File target = new File(root.getAbsolutePath() + "/" + dependency.getFileName());
-                    File source = new File(dependency.get(compile.getProject()));
-                    try {
-                        FileUtils.copyFile(source,target);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    manifest.add("lib/" + dependency.getFileName());
+                    dependency.get(compile.getProject()).ifPresent(path -> {
+                        File target = new File(root.getAbsolutePath() + "/" + dependency.getFileName());
+                        File source = new File(path);
+                        try {
+                            FileUtils.copyFile(source,target);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        manifest.add("lib/" + dependency.getFileName());
+                    });
                 }
                 manifests.add(manifest);
             }

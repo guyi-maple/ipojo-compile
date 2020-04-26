@@ -1,10 +1,12 @@
 package top.guyi.iot.ipojo.compile.lib.configuration.entry;
 
 import lombok.Data;
+import top.guyi.iot.ipojo.compile.lib.utils.MavenUtils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
+import java.util.Optional;
 
 @Data
 public class Dependency {
@@ -29,20 +31,20 @@ public class Dependency {
         return String.format("%s:%s:%s",groupId,artifactId,version);
     }
 
-    public String get(Project project){
-        return String.format(
-                "%s/%s/%s/%s/%s-%s.jar",
-                project.getLocalRepository(),
-                groupId.replaceAll("\\.", "/"),
-                artifactId,
-                version,
-                artifactId,
-                version
-        );
+    public Optional<String> get(Project project){
+        return MavenUtils.get(project,this);
     }
 
-    public URL getURL(Project project) throws MalformedURLException {
-        return new URL(String.format("file:///%s",this.get(project)));
+    public Optional<URL> getURL(Project project) {
+        return this.get(project)
+                .map(path -> {
+                    try {
+                        return new URL(String.format("file:///%s",path));
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                });
     }
 
     @Override

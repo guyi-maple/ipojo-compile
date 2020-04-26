@@ -58,10 +58,17 @@ public class ClassScanner {
             URL url = enumeration.nextElement();
             String json = IOUtils.toString(url.openStream(), StandardCharsets.UTF_8);
             ComponentInfo componentInfo = this.gson.fromJson(json,ComponentInfo.class);
-            if (!componentInfo.getName().equals(compile.getName()) && compile.getModules().contains(componentInfo.getName())){
-                for (ComponentEntry component : componentInfo.getComponents()) {
-                    CtClass classes = pool.get(component.getClasses());
-                    components.add(new CompileClass(classes,false,true,component.isProxy()));
+            if (!componentInfo.getName().equals(compile.getName())){
+                if (componentInfo.getComponents() != null){
+                    for (ComponentEntry component : componentInfo.getComponents()) {
+                        CtClass classes = pool.get(component.getClasses());
+                        components.add(new CompileClass(classes,false,true,component.isProxy()));
+                    }
+                }
+                if (componentInfo.getUseComponents() != null){
+                    for (ComponentEntry component : componentInfo.getUseComponents()) {
+                        compile.addUseComponent(pool.get(component.getClasses()));
+                    }
                 }
             }
         }

@@ -2,7 +2,9 @@ package top.guyi.iot.ipojo.compile.lib.compile.defaults;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import javassist.CtClass;
 import javassist.NotFoundException;
+import top.guyi.iot.ipojo.application.annotation.DynamicInject;
 import top.guyi.iot.ipojo.compile.lib.classes.ClassCompiler;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.*;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
@@ -36,7 +38,14 @@ public class ComponentTypeHandler implements CompileTypeHandler {
 
         componentInfo.setComponents(
                 components.stream()
-                        .map(component -> new ComponentEntry(component.getClasses().getName()))
+                        .map(component -> new ComponentEntry("classes",component.getClasses().getName(),component.isProxy()))
+                        .collect(Collectors.toSet())
+        );
+
+        componentInfo.setUseComponents(
+                compile.filterUseComponents(components)
+                        .stream()
+                        .map(component -> new ComponentEntry("classes",component.getClasses().getName(),component.isProxy()))
                         .collect(Collectors.toSet())
         );
 

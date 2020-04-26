@@ -37,6 +37,8 @@ public class ServiceRegisterExpand implements CompileExpand {
             register.setSuperclass(pool.get(AbstractServiceRegister.class.getName()));
             components.add(new CompileClass(register,true,true,false));
 
+            compile.addUseComponent(register);
+
             CtMethod method = new CtMethod(CtClass.voidType,"registerAll",new CtClass[0],register);
             method.setModifiers(Modifier.PROTECTED);
             StringBuffer methodBody = new StringBuffer("{");

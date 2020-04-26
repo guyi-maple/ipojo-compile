@@ -5,6 +5,7 @@ import top.guyi.iot.ipojo.application.annotation.Resource;
 import top.guyi.iot.ipojo.application.component.ComponentInterface;
 import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.classes.entry.FieldEntry;
+import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.inject.FieldInjector;
 import top.guyi.iot.ipojo.compile.lib.expand.inject.FieldInjectorFactory;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
@@ -14,7 +15,7 @@ import java.util.*;
 
 public class ClassEditor {
 
-    private FieldInjectorFactory injectorFactory = new FieldInjectorFactory();
+    private final FieldInjectorFactory injectorFactory = new FieldInjectorFactory();
 
     private CtClass applicationClass;
     private CtClass componentInterfaceClass;
@@ -31,7 +32,7 @@ public class ClassEditor {
         return this.componentInterfaceClass;
     }
 
-    public String getInjectMethodBody(ClassPool pool,CtClass classes) throws NotFoundException {
+    public String getInjectMethodBody(ClassPool pool,CtClass classes, Compile compile) throws NotFoundException {
         StringBuilder sb = new StringBuilder("{");
         List<FieldEntry> fields = JavassistUtils.getFields(pool.get(Object.class.getName()),classes,field -> {
             try {
@@ -60,6 +61,9 @@ public class ClassEditor {
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
                     FieldInjector injector = injectorFactory.get(field,pool);
+
+                    compile.addUseComponent(field.getField());
+
                     return injector.injectCode(field,setMethod,pool);
                 })
                 .filter(Objects::nonNull)
@@ -68,13 +72,13 @@ public class ClassEditor {
         return sb.toString();
     }
 
-    public void addInjectMethod(ClassPool pool,CtClass classes) throws CannotCompileException, NotFoundException {
+    public void addInjectMethod(ClassPool pool, CtClass classes, Compile compile) throws CannotCompileException, NotFoundException {
         try{
             JavassistUtils.getInjectMethod(pool,classes);
         }catch (NotFoundException e){
             classes.addInterface(this.getComponentInterfaceClass(pool));
             CtMethod method = new CtMethod(CtClass.voidType,"inject",new CtClass[]{this.getApplicationClass(pool)},classes);
-            method.setBody(this.getInjectMethodBody(pool,classes));
+            method.setBody(this.getInjectMethodBody(pool,classes,compile));
             classes.addMethod(method);
         }
     }

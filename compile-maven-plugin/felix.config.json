@@ -1,0 +1,5 @@
+{
+  "bundles": [
+    "file:////Users/guyi/Documents/Work/OSGI/iot-gateway-plugins/iot-debug-plugin/target/iot-debug-plugin-1.3.0.0.jar"
+  ]
+}

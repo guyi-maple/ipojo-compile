@@ -6,7 +6,7 @@
 
     <groupId>top.guyi.iot.ipojo.compile</groupId>
     <artifactId>ipojo-compile</artifactId>
-    <version>1.0.0.0</version>
+    <version>1.0.0.2-SNAPSHOT</version>
     <modules>
         <module>compile-lib</module>
         <module>compile-maven-plugin</module>
@@ -20,17 +20,12 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <ipojo.version>1.0.0.0</ipojo.version>
+        <ipojo.version>1.0.0.2-SNAPSHOT</ipojo.version>
         <lombok.version>1.18.4</lombok.version>
         <javassist.version>3.25.0-GA</javassist.version>
     </properties>
 
     <pluginRepositories>
-        <pluginRepository>
-            <id>aliyun</id>
-            <name>aliyun</name>
-            <url>https://maven.aliyun.com/repository/public</url>
-        </pluginRepository>
         <pluginRepository>
             <id>guyi</id>
             <name>guyi</name>
@@ -47,7 +42,7 @@
         <repository>
             <id>guyi</id>
             <name>guyi</name>
-            <url>http://nexus.guyi-maple.top/repository/maven-public/</url>
+            <url>http://nexus.guyi-maple.top/repository/osgi-iot/</url>
         </repository>
     </repositories>
 

@@ -1,6 +1,7 @@
 package top.guyi.iot.ipojo.compile.lib.compile.defaults;
 
 import top.guyi.iot.ipojo.application.ApplicationContext;
+import top.guyi.iot.ipojo.application.annotation.DynamicInject;
 import top.guyi.iot.ipojo.application.bean.ComponentInfo;
 import top.guyi.iot.ipojo.application.bean.interfaces.ApplicationStartEvent;
 import top.guyi.iot.ipojo.application.bean.interfaces.ApplicationStartSuccessEvent;
@@ -51,7 +52,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
         activator.setSuperclass(pool.get(AbstractApplicationActivator.class.getName()));
 
         // 注册组件
-        Set<CompileClass> tmpComponents = components
+        Set<CompileClass> tmpComponents = compile.filterUseComponents(components)
                 .stream()
                 .filter(CompileClass::isComponent)
                 .collect(Collectors.toSet());

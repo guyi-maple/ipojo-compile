@@ -2,16 +2,19 @@ package top.guyi.iot.ipojo.compile.lib;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import javassist.CtClass;
+import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import top.guyi.iot.ipojo.application.annotation.DynamicInject;
 import top.guyi.iot.ipojo.compile.lib.classes.ClassCompiler;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandlerFactory;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
-import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.configuration.parse.CompileFactory;
+import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.enums.JdkVersion;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
 import javassist.ClassPool;
@@ -19,23 +22,22 @@ import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpandFactory;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.ManifestExpandFactory;
 
 import java.io.*;
-import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 编译执行者
  */
 public class CompileExecutor {
 
-    private CompileFactory compileFactory = new CompileFactory();
-    private ClassCompiler compiler = new ClassCompiler();
+    private final CompileFactory compileFactory = new CompileFactory();
+    private final ClassCompiler compiler = new ClassCompiler();
 
-    private CompileTypeHandlerFactory compileTypeHandlerFactory;
-    private CompileExpandFactory compileExpandFactory;
-    private ManifestExpandFactory manifestExpandFactory;
+    private final CompileTypeHandlerFactory compileTypeHandlerFactory;
+    private final CompileExpandFactory compileExpandFactory;
+    private final ManifestExpandFactory manifestExpandFactory;
 
     public CompileExecutor(){
         this.compileTypeHandlerFactory = new CompileTypeHandlerFactory();
@@ -45,7 +47,7 @@ public class CompileExecutor {
 
     /**
      * 执行编译
-     * @param project 项目信息
+     * @param project 项目实体
      * @throws Exception
      */
     public Optional<Compile> execute(Project project) throws Exception {
@@ -79,7 +81,7 @@ public class CompileExecutor {
             if (compile.isFormatJdkVersion()){
                 for (CompileClass component : components) {
                     if (component.isWrite()){
-                        this.formatJavaVersion(component.getClasses().getURL(),compile.getJdk());
+                        compile.formatJavaVersion(component.getClasses().getURL());
                     }
                 }
             }
@@ -92,22 +94,12 @@ public class CompileExecutor {
                     .excludeFieldsWithoutExposeAnnotation()
                     .create();
             FileUtils.write(
-                    new File(compile.getProject().getOutput() + "/compile.info"),
+                    new File(compile.getProject().getOutput() + "/ipojo.compile"),
                     gson.toJson(compile),
                     StandardCharsets.UTF_8
             );
         }
         return Optional.ofNullable(compile);
     }
-
-    private void formatJavaVersion(URL url, JdkVersion version) throws IOException {
-        byte[] arr = IOUtils.toByteArray(url.openStream());
-        arr[7] = (byte)version.getTarget();
-        OutputStream out = new FileOutputStream(url.getFile());
-        out.write(arr);
-        out.flush();
-        out.close();
-    }
-
 
 }

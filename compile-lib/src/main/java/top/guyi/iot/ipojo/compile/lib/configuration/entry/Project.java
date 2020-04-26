@@ -23,6 +23,8 @@ public class Project {
 
     private Set<Dependency> dependencies = Collections.emptySet();
 
+    private Set<Server> servers = Collections.emptySet();
+
     public void setWork(String work){
         work = work.replace("\\","/");
         work = work.endsWith("/") ? work : work + "/";
@@ -63,6 +65,9 @@ public class Project {
         }
         if (repositories.isEmpty()){
             this.repositories = project.repositories;
+        }
+        if (servers.isEmpty()){
+            this.servers = project.servers;
         }
         if (project.getDependencies() != null && project.getDependencies().size() > 0){
             Set<Dependency> dependencies = new HashSet<>(this.dependencies);

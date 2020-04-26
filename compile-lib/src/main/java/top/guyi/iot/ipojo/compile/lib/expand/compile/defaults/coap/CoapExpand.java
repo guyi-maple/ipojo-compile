@@ -181,6 +181,7 @@ public class CoapExpand implements CompileExpand {
             components.add(new CompileClass(pool.get(CoapCurrent.class.getName())));
             CtClass manager = pool.makeClass(String.format("%s.coap.DefaultCoapServerManager",compile.getPackageName()));
             manager.setSuperclass(pool.get(CoapServerManager.class.getName()));
+            compile.addUseComponent(manager);
             CtMethod method = new CtMethod(CtClass.voidType,"registerMapping",new CtClass[]{
                     pool.get(CoapServer.class.getName()),
                     pool.get(ApplicationContext.class.getName())

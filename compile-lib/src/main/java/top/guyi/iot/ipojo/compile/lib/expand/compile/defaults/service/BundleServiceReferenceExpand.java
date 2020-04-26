@@ -70,6 +70,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
 
             CtClass listener = pool.makeClass(String.format("%s.service.AutoDefaultBundleServiceListener", compile.getPackageName()));
             listener.setSuperclass(pool.get(AbstractBundleServiceListener.class.getName()));
+            compile.addUseComponent(listener);
 
             CtMethod registerAll = new CtMethod(CtClass.voidType,"registerAll",new CtClass[]{
                     pool.get(ApplicationContext.class.getName())
@@ -112,6 +113,8 @@ public class BundleServiceReferenceExpand implements CompileExpand {
                 pool.get(ApplicationContext.class.getName()),
                 pool.get(BundleContext.class.getName())
         },invoker);
+
+        compile.addUseComponent(invoker);
 
         StringBuilder sb = new StringBuilder();
         for (CtClass type : method.getParameterTypes()) {

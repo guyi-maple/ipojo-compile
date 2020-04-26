@@ -60,12 +60,14 @@ public class TimeCompileExpand implements CompileExpand {
         if (!timers.isEmpty()) {
             CtClass timerRegister = pool.makeClass(String.format("%s.timer.DefaultTimeManager",compile.getPackageName()));
             timerRegister.setSuperclass(pool.get(AbstractTimerManager.class.getName()));
+            compile.addUseComponent(timerRegister);
             CtMethod registerAll = new CtMethod(CtClass.voidType,"registerAll",new CtClass[0],timerRegister);
             StringBuilder registerMethodBody = new StringBuilder("{\n");
             for (TimerEntry timer : timers) {
                 CtClass run = this.createTimerRunnable(compile,pool,timer);
                 components.add(new CompileClass(run,false,false,false));
                 run.writeFile(compile.getProject().getWork());
+                compile.formatJavaVersion(run.getURL());
                 registerMethodBody.append(String.format(
                         "$0.register((%s)new %s());\n",
                         TimerRunnable.class.getName(),

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>ipojo-compile</artifactId>
         <groupId>top.guyi.iot.ipojo.compile</groupId>
-        <version>1.0.0.0</version>
+        <version>1.0.0.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>compile-maven-plugin</artifactId>
@@ -27,6 +27,13 @@
             <groupId>top.guyi.iot.ipojo.compile</groupId>
             <artifactId>compile-lib</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.main</artifactId>
+            <version>6.0.3</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>

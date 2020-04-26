@@ -17,6 +17,7 @@ import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Repository;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Server;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,6 +52,12 @@ public class CompileMojo extends AbstractMojo {
 
     private Project createProjectInfo() throws DependencyGraphBuilderException {
         Project project = new Project();
+        project.setServers(
+                session.getRequest().getServers()
+                        .stream()
+                        .map(server -> new Server(server.getId(),server.getUsername(),server.getPassword()))
+                        .collect(Collectors.toSet())
+        );
         project.setGroupId(this.project.getGroupId());
         project.setArtifactId(this.project.getArtifactId());
         project.setVersion(this.project.getVersion());
@@ -86,7 +93,7 @@ public class CompileMojo extends AbstractMojo {
                 .map(artifact -> new Dependency(
                         artifact.getGroupId(),
                         artifact.getArtifactId(),
-                        artifact.getVersion(),
+                        artifact.getBaseVersion(),
                         artifact.getScope()))
                 .collect(Collectors.toSet());
     }
