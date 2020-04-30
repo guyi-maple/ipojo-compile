@@ -36,6 +36,8 @@ public class ComponentTypeHandler implements CompileTypeHandler {
     public Set<CompileClass> handle(ClassPool pool, Compile compile,Set<CompileClass> components) throws IOException, NotFoundException {
         ComponentInfo componentInfo = new ComponentInfo();
 
+        componentInfo.setConfigurations(compile.getConfigurationKeys());
+
         componentInfo.setComponents(
                 components.stream()
                         .map(component -> new ComponentEntry("classes",component.getClasses().getName(),component.isProxy()))
@@ -60,8 +62,6 @@ public class ComponentTypeHandler implements CompileTypeHandler {
         IOUtils.write(this.gson.toJson(componentInfo),writer);
         writer.flush();
         writer.close();
-
-        compile.getModules().add(compile.getName());
 
         return components;
     }

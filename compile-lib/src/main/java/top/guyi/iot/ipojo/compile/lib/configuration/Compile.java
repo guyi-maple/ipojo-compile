@@ -10,10 +10,10 @@ import org.apache.commons.io.IOUtils;
 import top.guyi.iot.ipojo.application.annotation.DynamicInject;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.CompileExclude;
-import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.enums.JdkVersion;
+import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.configuration.entry.ConfigurationKeyEntry;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,10 +33,7 @@ public class Compile {
     private String activator;
 
     @Expose
-    private JdkVersion jdk = JdkVersion.JAVA8;
-
-    @Expose
-    private boolean formatJdkVersion;
+    private JdkVersion jdk;
 
     @Expose
     private String name;
@@ -51,11 +48,7 @@ public class Compile {
     @SerializedName("package")
     private String packageName;
 
-    @Expose
     private Set<String> modules = new HashSet<>();
-
-    @Expose
-    private Set<Dependency> dependencies = Collections.emptySet();
 
     @Expose
     @SerializedName("manifest")
@@ -74,6 +67,7 @@ public class Compile {
     private Map<String,String> env = Collections.emptyMap();
 
     private Set<CtClass> useComponents = new HashSet<>();
+    private Set<ConfigurationKeyEntry> configurationKeys = new HashSet<>();
 
     public void addUseComponent(CtClass classes){
         this.getUseComponents().add(classes);
@@ -97,12 +91,14 @@ public class Compile {
      * @throws IOException
      */
     public void formatJavaVersion(URL url) throws IOException {
-        byte[] arr = IOUtils.toByteArray(url.openStream());
-        arr[7] = (byte) this.jdk.getTarget();
-        OutputStream out = new FileOutputStream(url.getFile());
-        out.write(arr);
-        out.flush();
-        out.close();
+        if (this.jdk != null){
+            byte[] arr = IOUtils.toByteArray(url.openStream());
+            arr[7] = (byte) this.jdk.getTarget();
+            OutputStream out = new FileOutputStream(url.getFile());
+            out.write(arr);
+            out.flush();
+            out.close();
+        }
     }
 
     public Set<CompileClass> filterUseComponents(Set<CompileClass> components){

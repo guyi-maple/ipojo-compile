@@ -51,7 +51,8 @@ public class CompileExecutor {
      * @throws Exception
      */
     public Optional<Compile> execute(Project project) throws Exception {
-        ClassPool pool = ClassPool.getDefault();
+        ClassPool pool = new ClassPool();
+        pool.appendSystemPath();
         Compile compile = compileFactory.create(project,pool);
 
         if (compile != null){
@@ -78,7 +79,7 @@ public class CompileExecutor {
             }
 
             // 更改Java版本
-            if (compile.isFormatJdkVersion()){
+            if (compile.getJdk() != null && compile.getJdk() != JdkVersion.None){
                 for (CompileClass component : components) {
                     if (component.isWrite()){
                         compile.formatJavaVersion(component.getClasses().getURL());

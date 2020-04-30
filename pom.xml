@@ -27,31 +27,31 @@
 
     <pluginRepositories>
         <pluginRepository>
-            <id>guyi</id>
-            <name>guyi</name>
-            <url>http://nexus.guyi-maple.top/repository/maven-public/</url>
+            <id>iot</id>
+            <url>http://nexus.guyi-maple.top/content/repositories/iot/</url>
         </pluginRepository>
     </pluginRepositories>
 
     <repositories>
         <repository>
             <id>aliyun</id>
-            <name>aliyun</name>
             <url>https://maven.aliyun.com/repository/public</url>
         </repository>
         <repository>
-            <id>guyi</id>
-            <name>guyi</name>
-            <url>http://nexus.guyi-maple.top/repository/osgi-iot/</url>
+            <id>iot</id>
+            <url>http://nexus.guyi-maple.top/content/repositories/iot/</url>
         </repository>
     </repositories>
 
     <distributionManagement>
         <repository>
-            <id>guyi-iot</id>
-            <name>guyi-iot</name>
-            <url>http://nexus.guyi-maple.top/repository/osgi-iot/</url>
+            <id>iot-releases</id>
+            <url>http://nexus.guyi-maple.top/content/repositories/iot-releases/</url>
         </repository>
+        <snapshotRepository>
+            <id>iot-snapshots</id>
+            <url>http://nexus.guyi-maple.top/content/repositories/iot-snapshots/</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <dependencyManagement>

@@ -35,8 +35,12 @@ public class Dependency {
         return MavenUtils.get(project,this);
     }
 
-    public Optional<URL> getURL(Project project) {
-        return this.get(project)
+    public Optional<String> get(String localRepository){
+        return MavenUtils.get(localRepository,this);
+    }
+
+    public Optional<URL> getURL(String localRepository) {
+        return this.get(localRepository)
                 .map(path -> {
                     try {
                         return new URL(String.format("file:///%s",path));
@@ -45,6 +49,10 @@ public class Dependency {
                     }
                     return null;
                 });
+    }
+
+    public Optional<URL> getURL(Project project) {
+        return this.getURL(project.getLocalRepository());
     }
 
     @Override

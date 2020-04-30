@@ -2,23 +2,29 @@ package top.guyi.iot.compile.maven.mojo;
 
 import com.google.gson.Gson;
 import lombok.SneakyThrows;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.repository.RemoteRepository;
 import top.guyi.iot.compile.maven.mojo.configuration.FelixConfiguration;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Repository;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Server;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
+import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
-@Mojo(name = "felix", defaultPhase = LifecyclePhase.TEST)
+@Mojo(name = "felix")
 public class FelixMojo extends AbstractMojo {
 
     @Parameter(property = "project")
     private MavenProject project;
+    @Parameter(property = "session")
+    private MavenSession session;
+    @Parameter(property = "project.remoteProjectRepositories")
+    private List<RemoteRepository> remoteRepos;
 
     @Override
     @SneakyThrows
@@ -27,17 +33,9 @@ public class FelixMojo extends AbstractMojo {
         this.startFelix(base);
     }
 
-    private void setBundle(String base, List<String> bundles){
-        File target = new File(String.format("%s/target",base));
-        String artifactId = project.getArtifactId();
-        Optional.ofNullable(target.listFiles((dir, name) -> name.contains(artifactId) && name.endsWith(".jar")))
-                .ifPresent(files -> Arrays.stream(files).forEach(file -> bundles.add(String.format("file:///%s",file.getAbsolutePath()))));
-    }
-
     private void startFelix(String base) throws Exception {
         Gson gson = new Gson();
-
-        File json = new File(String.format("%s/felix.config.json",base));
+        File json = new File(String.format("%s/configuration.felix",base));
         FelixConfiguration configuration;
         if (json.exists()){
             configuration = gson.fromJson(
@@ -46,28 +44,42 @@ public class FelixMojo extends AbstractMojo {
             );
         }else{
             configuration = new FelixConfiguration();
+            configuration.setConfig(new HashMap<>());
+            configuration.setBundles(new LinkedList<>());
         }
+        this.setConfigurationAttach(configuration);
+        this.writeConfig(base,configuration);
+        org.apache.felix.main.Main.main(new String[0]);
+    }
 
-        List<String> bundles = new LinkedList<>();
-        bundles.add("https://maven.aliyun.com/repository/public/org/fusesource/jansi/jansi/1.17.1/jansi-1.17.1.jar");
-        bundles.add("https://maven.aliyun.com/repository/public/org/jline/jline/3.7.0/jline-3.7.0.jar");
-        bundles.add("https://maven.aliyun.com/repository/public/org/apache/felix/org.apache.felix.eventadmin/1.5.0/org.apache.felix.eventadmin-1.5.0.jar");
-        bundles.add("https://maven.aliyun.com/repository/public/org/apache/felix/org.apache.felix.log/1.2.0/org.apache.felix.log-1.2.0.jar");
-        bundles.add("https://maven.aliyun.com/repository/public/org/apache/felix/org.apache.felix.gogo.runtime/1.1.0/org.apache.felix.gogo.runtime-1.1.0.jar");
-        bundles.add("https://maven.aliyun.com/repository/public/org/apache/felix/org.apache.felix.gogo.command/1.0.2/org.apache.felix.gogo.command-1.0.2.jar");
-        bundles.add("https://maven.aliyun.com/repository/public/org/apache/felix/org.apache.felix.gogo.jline/1.1.0/org.apache.felix.gogo.jline-1.1.0.jar");
-        configuration.addDefaultBundles(bundles);
+    private void setConfigurationAttach(FelixConfiguration configuration){
+        configuration.setProject(this.project);
+        configuration.setRepositories(
+                this.remoteRepos
+                        .stream()
+                        .map(repo -> new Repository(
+                                repo.getId(),
+                                repo.getContentType(),
+                                repo.getUrl())
+                        ).collect(Collectors.toList())
+        );
+        configuration.setServers(
+                session.getRequest().getServers()
+                        .stream()
+                        .map(server -> new Server(server.getId(),server.getUsername(),server.getPassword()))
+                        .collect(Collectors.toSet())
+        );
+        configuration.setLocalRepository(session.getRepositorySession().getLocalRepository().getBasedir().getAbsolutePath());
+    }
 
-        this.setBundle(base,configuration.getBundles());
-
+    private void writeConfig(String base,FelixConfiguration configuration) throws IOException {
         File configDir = new File(String.format("%s/conf",base));
         if (!configDir.exists()){
             configDir.mkdirs();
         }
-        Properties properties = new Properties();
-        configuration.toMap().forEach(properties::setProperty);
-        properties.store(new FileOutputStream(String.format("%s/config.properties",configDir.getAbsoluteFile())),null);
-        org.apache.felix.main.Main.main(new String[0]);
-    }
 
+        Properties properties = new Properties();
+        configuration.getConfigMap().forEach(properties::setProperty);
+        properties.store(new FileOutputStream(String.format("%s/conf/config.properties",base)),null);
+    }
 }

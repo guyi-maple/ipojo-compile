@@ -34,11 +34,14 @@ public class Booter
         return ManualRepositorySystemFactory.newRepositorySystem();
     }
 
-    public static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system, Project project)
-    {
+    public static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system, Project project) {
+        return newRepositorySystemSession(system,project.getLocalRepository());
+    }
+
+    public static DefaultRepositorySystemSession newRepositorySystemSession(RepositorySystem system, String localRepository) {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
-        LocalRepository localRepo = new LocalRepository( project.getLocalRepository());
+        LocalRepository localRepo = new LocalRepository(localRepository);
         session.setLocalRepositoryManager( system.newLocalRepositoryManager(session,localRepo) );
 
         session.setTransferListener( new ConsoleTransferListener() );

@@ -11,17 +11,26 @@ import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentEntry;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentInfo;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.JarURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 
 public class ClassScanner {
 
-    private Gson gson = new Gson();
+    private final Gson gson = new Gson();
+
+    private JarFile getJarFile(String path) throws IOException {
+        return ((JarURLConnection)new URL(String.format("jar:file:%s!/",path)).openConnection()).getJarFile();
+    }
 
     private Set<File> getClassFile(File root,Set<File> files){
         if (root.isDirectory()){
@@ -53,21 +62,26 @@ public class ClassScanner {
             )));
         }
 
-        Enumeration<URL> enumeration = pool.getClassLoader().getResources("component.info");
-        while (enumeration.hasMoreElements()){
-            URL url = enumeration.nextElement();
-            String json = IOUtils.toString(url.openStream(), StandardCharsets.UTF_8);
-            ComponentInfo componentInfo = this.gson.fromJson(json,ComponentInfo.class);
-            if (!componentInfo.getName().equals(compile.getName())){
-                if (componentInfo.getComponents() != null){
-                    for (ComponentEntry component : componentInfo.getComponents()) {
-                        CtClass classes = pool.get(component.getClasses());
-                        components.add(new CompileClass(classes,false,true,component.isProxy()));
-                    }
-                }
-                if (componentInfo.getUseComponents() != null){
-                    for (ComponentEntry component : componentInfo.getUseComponents()) {
-                        compile.addUseComponent(pool.get(component.getClasses()));
+        for (Dependency dependency : compile.getProject().getDependencies()) {
+            Optional<String> dependencyPath = dependency.get(compile.getProject());
+            if (dependencyPath.isPresent()){
+                JarFile jar = this.getJarFile(dependencyPath.get());
+                ZipEntry entry = jar.getEntry("component.info");
+                if (entry != null){
+                    ComponentInfo componentInfo = this.gson.fromJson(IOUtils.toString(jar.getInputStream(entry)),ComponentInfo.class);
+                    if (!componentInfo.getName().equals(compile.getName())){
+                        compile.getModules().add(componentInfo.getName());
+                        if (componentInfo.getComponents() != null){
+                            for (ComponentEntry component : componentInfo.getComponents()) {
+                                CtClass classes = pool.get(component.getClasses());
+                                components.add(new CompileClass(classes,false,true,component.isProxy()));
+                            }
+                        }
+                        if (componentInfo.getUseComponents() != null){
+                            for (ComponentEntry component : componentInfo.getUseComponents()) {
+                                compile.addUseComponent(pool.get(component.getClasses()));
+                            }
+                        }
                     }
                 }
             }

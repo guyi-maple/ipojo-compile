@@ -59,12 +59,16 @@ public class MavenUtils {
     }
 
     public static Optional<String> get(Project project,Dependency dependency){
+        return get(project.getLocalRepository(),dependency);
+    }
+
+    public static Optional<String> get(String localRepository,Dependency dependency){
         if (dependency.getVersion().toLowerCase().endsWith("-snapshot")){
-            return getSnapshot(project,dependency);
+            return getSnapshot(localRepository,dependency);
         }else{
             return Optional.of(String.format(
                     "%s/%s/%s/%s/%s-%s.jar",
-                    project.getLocalRepository(),
+                    localRepository,
                     dependency.getGroupId().replaceAll("\\.", "/"),
                     dependency.getArtifactId(),
                     dependency.getVersion(),
@@ -74,10 +78,10 @@ public class MavenUtils {
         }
     }
 
-    private static String getLocation(Project project,Dependency dependency,SnapshotVersion version){
+    private static String getLocation(String localRepository,Dependency dependency,SnapshotVersion version){
         return String.format(
                 "%s/%s/%s/%s/%s-%s.jar",
-                project.getLocalRepository(),
+                localRepository,
                 dependency.getGroupId().replaceAll("\\.", "/"),
                 dependency.getArtifactId(),
                 dependency.getVersion(),
@@ -85,10 +89,10 @@ public class MavenUtils {
                 version.getValue());
     }
 
-    public static Optional<String> getSnapshot(Project project, Dependency dependency){
+    public static Optional<String> getSnapshot(String localRepository, Dependency dependency){
         String base = String.format(
                 "%s/%s/%s/%s",
-                project.getLocalRepository(),
+                localRepository,
                 dependency.getGroupId().replaceAll("\\.", "/"),
                 dependency.getArtifactId(),
                 dependency.getVersion()
@@ -99,10 +103,10 @@ public class MavenUtils {
                 .orElseGet(Stream::empty)
                 .map(MavenUtils::getSnapshotVersion)
                 .filter(Objects::nonNull)
-                .filter(v -> new File(getLocation(project,dependency,v)).exists())
+                .filter(v -> new File(getLocation(localRepository,dependency,v)).exists())
                 .max(Comparator.comparing(SnapshotVersion::getLastUpdated));
 
-        return version.map(v -> getLocation(project,dependency,v));
+        return version.map(v -> getLocation(localRepository,dependency,v));
     }
 
 }

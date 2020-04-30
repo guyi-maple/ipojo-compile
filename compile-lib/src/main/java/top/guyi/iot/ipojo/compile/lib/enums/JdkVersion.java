@@ -8,6 +8,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum JdkVersion {
 
+    @SerializedName("none")
+    None(0,0,"Auto"),
     @SerializedName("8")
     JAVA8(8,52,"Java8"),
     @SerializedName("7")

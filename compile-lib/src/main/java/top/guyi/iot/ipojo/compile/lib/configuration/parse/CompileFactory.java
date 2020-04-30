@@ -86,23 +86,13 @@ public class CompileFactory {
                 project.getDependencies().addAll(dependencies);
             }
 
-            URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-            Method add = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-            add.setAccessible(true);
             // 添加编译期依赖
-            add.invoke(classLoader,new URL(String.format("file:///%s",project.getWork())));
+            pool.appendClassPath(project.getWork());
             for (Dependency dependency : project.getDependencies()) {
                 dependency.get(project).ifPresent(path -> {
                     try {
                         pool.appendClassPath(path);
                     } catch (NotFoundException e) {
-                        e.printStackTrace();
-                    }
-                });
-                dependency.getURL(project).ifPresent(url -> {
-                    try {
-                        add.invoke(classLoader,url);
-                    } catch (IllegalAccessException | InvocationTargetException e) {
                         e.printStackTrace();
                     }
                 });
@@ -170,7 +160,6 @@ public class CompileFactory {
         extendConfiguration(configuration,getAllConfiguration(project));
 
         Compile compile = CompileFormat.format(configuration);
-        project.getDependencies().addAll(compile.getDependencies());
 
         if (StringUtils.isEmpty(compile.getPackageName())){
             throw new CompileInfoCheckException("packageName");

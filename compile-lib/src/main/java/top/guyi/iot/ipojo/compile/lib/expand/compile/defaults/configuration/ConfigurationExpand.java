@@ -7,11 +7,11 @@ import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.configuration.entry.ConfigurationField;
+import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.configuration.entry.ConfigurationKeyEntry;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,6 +37,14 @@ public class ConfigurationExpand implements CompileExpand {
                                 if (configurationKey == null){
                                     return null;
                                 }
+
+                                compile.getConfigurationKeys().add(new ConfigurationKeyEntry(
+                                        configurationKey.key(),
+                                        configurationKey.remark(),
+                                        configurationKey.file(),
+                                        component.getClasses().getSimpleName()
+                                ));
+
                                 return new ConfigurationField(
                                         component,
                                         field,
