@@ -23,6 +23,10 @@ public class Dependency {
         this.scope = scope;
     }
 
+    public String getScope() {
+        return Optional.ofNullable(this.scope).orElse("compile");
+    }
+
     public String getFileName(){
         return String.format("%s-%s.jar",artifactId,version);
     }
@@ -49,10 +53,6 @@ public class Dependency {
                     }
                     return null;
                 });
-    }
-
-    public Optional<URL> getURL(Project project) {
-        return this.getURL(project.getLocalRepository());
     }
 
     @Override
