@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 public class CompileExclude {
 
     @Expose
+    @SerializedName("copy")
     private Set<String> dependencyCopy = Collections.emptySet();
 
     @Expose
@@ -23,6 +24,7 @@ public class CompileExclude {
     private Set<String> importPackage = Collections.emptySet();
 
     @Expose
+    @SerializedName("scope")
     private Set<String> dependencyScope = Collections.emptySet();
 
     public boolean noneExport(String packageName){
