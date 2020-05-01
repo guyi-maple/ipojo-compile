@@ -4,8 +4,8 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.NotFoundException;
-import top.guyi.iot.ipojo.application.component.ForType;
-import top.guyi.iot.ipojo.application.utils.StringUtils;
+import top.guyi.iot.ipojo.compile.lib.cons.ClassNames;
+import top.guyi.iot.ipojo.compile.lib.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.classes.entry.FieldEntry;
 import top.guyi.iot.ipojo.compile.lib.expand.inject.FieldInjector;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
@@ -30,7 +30,7 @@ public class MapFieldInjector implements FieldInjector {
         try {
             if (types.size() == 2
                     && types.get(0).getName().equals(String.class.getName())
-                    && types.get(1).subtypeOf(pool.get(ForType.class.getName()))){
+                    && types.get(1).subtypeOf(pool.get(ClassNames.ForType))){
 
                 if (StringUtils.isEmpty(field.getName())){
                     return String.format(

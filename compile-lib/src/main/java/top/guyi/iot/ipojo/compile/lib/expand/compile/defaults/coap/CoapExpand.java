@@ -1,39 +1,30 @@
 package top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.coap;
 
 import javassist.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.eclipse.californium.core.CoapResource;
-import org.eclipse.californium.core.CoapServer;
-import org.eclipse.californium.core.server.resources.Resource;
-import top.guyi.iot.ipojo.application.ApplicationContext;
+import javassist.bytecode.annotation.Annotation;
+import javassist.bytecode.annotation.EnumMemberValue;
+import javassist.bytecode.annotation.StringMemberValue;
+import lombok.*;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.cons.AnnotationNames;
+import top.guyi.iot.ipojo.compile.lib.cons.ClassNames;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
-import top.guyi.iot.ipojo.module.coap.CoapHandlerDecorator;
-import top.guyi.iot.ipojo.module.coap.CoapResourceInvoker;
-import top.guyi.iot.ipojo.module.coap.CoapServerManager;
-import top.guyi.iot.ipojo.module.coap.annotation.CoapMapping;
-import top.guyi.iot.ipojo.module.coap.enums.CoapMethod;
-import top.guyi.iot.ipojo.module.coap.utils.CoapCurrent;
+import top.guyi.iot.ipojo.compile.lib.utils.AnnotationUtils;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 class CoapMethodEntry{
 
-    @Setter
-    private CoapMapping mapping;
-
+    private Annotation mapping;
     private CtClass classes;
     private CtMethod method;
-    public CoapMethodEntry(CtClass classes, CtMethod method) {
-        this.classes = classes;
-        this.method = method;
-    }
 }
 
 /**
@@ -44,7 +35,7 @@ public class CoapExpand implements CompileExpand {
 
     @Override
     public boolean check(Compile compile) {
-        return compile.getType() == CompileType.BUNDLE && compile.getModules().contains("coap");
+        return compile.getType() == CompileType.BUNDLE && compile.getModules().contains("coap-server");
     }
 
     private String getName(int index,String[] key){
@@ -63,23 +54,23 @@ public class CoapExpand implements CompileExpand {
             if (!names.contains(this.getName(index,key))){
                 body.append(String.format(
                         "%s %s = new %s(\"%s\");\n",
-                        CoapResource.class.getName(),
+                        ClassNames.CoapResource,
                         this.getName(index,key),
-                        CoapResource.class.getName(),
+                        ClassNames.CoapResource,
                         key[index]
                 ));
                 names.add(this.getName(index,key));
 
                 if (index == 0){
                     body.append(String.format("$1.add(new %s[]{%s});\n\n",
-                            Resource.class.getName(),
+                            ClassNames.Resource,
                             this.getName(index,key)
                     ));
                 }else{
                     body.append(String.format(
                             "%s.add((%s)%s);\n",
                             this.getName((index - 1),key),
-                            CoapResource.class.getName(),
+                            ClassNames.CoapResource,
                             this.getName(index,key)
                     ));
                 }
@@ -89,14 +80,14 @@ public class CoapExpand implements CompileExpand {
             names.add(this.getName(index,key));
             body.append(String.format(
                     "%s %s = new %s(\"%s\",$2);\n",
-                    CoapResource.class.getName(),
+                    ClassNames.CoapResource,
                     this.getName(index,key),
                     decorator.getName(),
                     key[index]
             ));
             body.append(String.format("%s.add((%s)%s);\n\n",
                     this.getName((index - 1),key),
-                    CoapResource.class.getName(),
+                    ClassNames.CoapResource,
                     this.getName(index,key)
             ));
         }
@@ -117,7 +108,13 @@ public class CoapExpand implements CompileExpand {
     private String getResourceTree(Map<String,List<CoapMethodEntry>> map,ClassPool pool,Set<CompileClass> components,Compile compile) throws CannotCompileException, NotFoundException, IOException, ClassNotFoundException {
         Map<String[],List<CoapMethodEntry>> treeMap = map.entrySet()
                 .stream()
-                .collect(Collectors.toMap(e -> e.getKey().split("/"), Map.Entry::getValue));
+                .collect(Collectors.toMap(e -> {
+                    if (e.getKey().startsWith("/")){
+                        return e.getKey().substring(1).split("/");
+                    }else{
+                        return e.getKey().split("/");
+                    }
+                }, Map.Entry::getValue));
 
         List<String[]> keys = new LinkedList<>(treeMap.keySet());
         keys.sort(Comparator.comparingInt(key -> key.length));
@@ -134,13 +131,13 @@ public class CoapExpand implements CompileExpand {
                 names.add(this.getName(0,key));
                 body.append(String.format(
                         "%s %s = new %s(\"%s\",$2);\n",
-                        CoapResource.class.getName(),
+                        ClassNames.CoapResource,
                         key[0],
                         decorator.getName(),
                         key[0]
                 ));
                 body.append(String.format("$1.add(new %s[]{%s});\n\n",
-                        Resource.class.getName(),
+                        ClassNames.Resource,
                         key[0]
                 ));
             }
@@ -161,30 +158,31 @@ public class CoapExpand implements CompileExpand {
                                 .map(Arrays::asList)
                                 .orElseGet(LinkedList::new)
                                 .stream()
-                                .filter(method -> method.hasAnnotation(CoapMapping.class))
-                                .map(method -> new CoapMethodEntry(component.getClasses(),method))
+                                .map(method -> AnnotationUtils
+                                        .getAnnotation(component.getClasses(),method, AnnotationNames.CoapMapping)
+                                        .map(annotation -> new CoapMethodEntry(annotation,component.getClasses(),method))
+                                        .orElse(null))
+                                .filter(Objects::nonNull)
                                 .collect(Collectors.toList()))
                 .flatMap(Collection::stream)
                 .forEach(method -> {
-                    try {
-                        CoapMapping mapping = (CoapMapping) method.getMethod().getAnnotation(CoapMapping.class);
-                        method.setMapping(mapping);
-                        List<CoapMethodEntry> list = entryMap.getOrDefault(mapping.path(),new LinkedList<>());
-                        list.add(method);
-                        entryMap.put(mapping.path(),list);
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
+                    AnnotationUtils.getAnnotationValue(method.getMapping(),"path")
+                            .map(value -> (StringMemberValue) value)
+                            .ifPresent(path -> {
+                                List<CoapMethodEntry> list = entryMap.getOrDefault(path.getValue(),new LinkedList<>());
+                                list.add(method);
+                                entryMap.put(path.getValue(),list);
+                            });
                 });
 
         if (!entryMap.isEmpty()) {
-            components.add(new CompileClass(pool.get(CoapCurrent.class.getName())));
+            components.add(new CompileClass(pool.get(ClassNames.CoapCurrent)));
             CtClass manager = pool.makeClass(String.format("%s.coap.DefaultCoapServerManager",compile.getPackageName()));
-            manager.setSuperclass(pool.get(CoapServerManager.class.getName()));
+            manager.setSuperclass(pool.get(ClassNames.CoapServerManager));
             compile.addUseComponent(manager);
             CtMethod method = new CtMethod(CtClass.voidType,"registerMapping",new CtClass[]{
-                    pool.get(CoapServer.class.getName()),
-                    pool.get(ApplicationContext.class.getName())
+                    pool.get(ClassNames.CoapServer),
+                    pool.get(ClassNames.ApplicationContext)
             },manager);
             method.setBody(this.getResourceTree(entryMap,pool,components,compile));
             manager.addMethod(method);
@@ -208,11 +206,11 @@ public class CoapExpand implements CompileExpand {
      */
     private CtClass makeCoapHandlerDecorator(List<CoapMethodEntry> methods,ClassPool pool,Set<CompileClass> components,Compile compile) throws NotFoundException, CannotCompileException, ClassNotFoundException, IOException {
         CtClass decorator = pool.makeClass(String.format("%s.coap.decorators.CoapHandlerDecorator%s",compile.getPackageName(),UUID.randomUUID().toString().replaceAll("-","")));
-        decorator.setSuperclass(pool.get(CoapHandlerDecorator.class.getName()));
+        decorator.setSuperclass(pool.get(ClassNames.CoapHandlerDecorator));
 
         CtConstructor constructor = new CtConstructor(new CtClass[]{
                 pool.get(String.class.getName()),
-                pool.get(ApplicationContext.class.getName())
+                pool.get(ClassNames.ApplicationContext)
         },decorator);
         constructor.setBody("{super($$);}");
         decorator.addConstructor(constructor);
@@ -220,10 +218,15 @@ public class CoapExpand implements CompileExpand {
         StringBuilder methodBody = new StringBuilder("{\n");
         for (CoapMethodEntry method : methods) {
             CtClass invoker = this.makeCoapInvoker(method,pool,compile);
+            String methodName = Optional.ofNullable(method.getMapping().getMemberValue("method"))
+                    .map(value -> (EnumMemberValue)  value)
+                    .map(EnumMemberValue::getValue)
+                    .map(name -> name.substring(name.lastIndexOf(".") + 1))
+                    .orElse("POST");
             methodBody.append(String.format(
                     "$0.register(%s.%s,new %s());\n",
-                    CoapMethod.class.getName(),
-                    method.getMapping().method().getValue(),
+                    ClassNames.CoapMethod,
+                    methodName,
                     invoker.getName()
             ));
         }
@@ -252,7 +255,7 @@ public class CoapExpand implements CompileExpand {
      */
     private CtClass makeCoapInvoker(CoapMethodEntry method,ClassPool pool,Compile compile) throws NotFoundException, CannotCompileException, IOException {
         CtClass invoker = pool.makeClass(String.format("%s.coap.invokers.CoapInvoker%s",compile.getPackageName(),UUID.randomUUID().toString().replaceAll("-","")));
-        invoker.addInterface(pool.get(CoapResourceInvoker.class.getName()));
+        invoker.addInterface(pool.get(ClassNames.CoapResourceInvoker));
         CtClass type = method.getMethod().getParameterTypes()[0];
 
         CtMethod argsClassMethod = new CtMethod(pool.get(Class.class.getName()),"argsClass",new CtClass[0],invoker);
@@ -260,15 +263,25 @@ public class CoapExpand implements CompileExpand {
         invoker.addMethod(argsClassMethod);
 
         CtMethod invokeMethod = new CtMethod(pool.get(Object.class.getName()),"invoke",new CtClass[]{
-                pool.get(ApplicationContext.class.getName()),
+                pool.get(ClassNames.ApplicationContext),
                 pool.get(Object.class.getName())
         },invoker);
-        invokeMethod.setBody(String.format(
-                "{return ((%s)$1.get(%s.class,true)).%s((%s)$2);}",
+
+        StringBuilder body = new StringBuilder("{");
+        String code = String.format(
+                "((%s)$1.get(%s.class,true)).%s((%s) $2);",
                 method.getClasses().getName(),
                 method.getClasses().getName(),
                 method.getMethod().getName(),
-                type.getName()));
+                type.getName()
+        );
+        if (method.getMethod().getReturnType() == CtClass.voidType){
+            body.append(code).append("return null;");
+        }else{
+            body.append("Object result = ").append(code).append("return result;");
+        }
+        body.append("}");
+        invokeMethod.setBody(body.toString());
         invoker.addMethod(invokeMethod);
 
         invoker.writeFile(compile.getProject().getOutput());

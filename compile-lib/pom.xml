@@ -12,17 +12,17 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>top.guyi.iot.ipojo.module</groupId>
-            <artifactId>coap-server</artifactId>
-            <version>${ipojo.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>top.guyi.iot.ipojo.module</groupId>-->
+<!--            <artifactId>coap-server</artifactId>-->
+<!--            <version>${ipojo.version}</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>top.guyi.iot.ipojo.module</groupId>
-            <artifactId>stream</artifactId>
-            <version>${ipojo.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>top.guyi.iot.ipojo.module</groupId>-->
+<!--            <artifactId>stream</artifactId>-->
+<!--            <version>${ipojo.version}</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>com.google.code.gson</groupId>

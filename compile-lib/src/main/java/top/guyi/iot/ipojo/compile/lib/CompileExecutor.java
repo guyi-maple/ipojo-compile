@@ -2,11 +2,7 @@ package top.guyi.iot.ipojo.compile.lib;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import javassist.CtClass;
-import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import top.guyi.iot.ipojo.application.annotation.DynamicInject;
 import top.guyi.iot.ipojo.compile.lib.classes.ClassCompiler;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandlerFactory;
@@ -14,7 +10,6 @@ import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.configuration.parse.CompileFactory;
-import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.enums.JdkVersion;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
 import javassist.ClassPool;
@@ -22,17 +17,14 @@ import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpandFactory;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.ManifestExpandFactory;
 
 import java.io.*;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 编译执行者
  */
 public class CompileExecutor {
 
-    private final CompileFactory compileFactory = new CompileFactory();
     private final ClassCompiler compiler = new ClassCompiler();
 
     private final CompileTypeHandlerFactory compileTypeHandlerFactory;
@@ -53,7 +45,10 @@ public class CompileExecutor {
     public Optional<Compile> execute(Project project) throws Exception {
         ClassPool pool = new ClassPool();
         pool.appendSystemPath();
-        Compile compile = compileFactory.create(project,pool);
+        pool.appendClassPath(project.getWork());
+        CompileFactory compileFactory = new CompileFactory(pool);
+
+        Compile compile = compileFactory.create(project);
 
         if (compile != null){
             pool.appendClassPath(compile.getProject().getWork());
@@ -100,6 +95,7 @@ public class CompileExecutor {
                     StandardCharsets.UTF_8
             );
         }
+
         return Optional.ofNullable(compile);
     }
 

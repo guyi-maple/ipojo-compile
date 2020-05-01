@@ -2,9 +2,11 @@ package top.guyi.iot.ipojo.compile.lib.compile.entry;
 
 import javassist.ClassPool;
 import javassist.CtClass;
-import javassist.NotFoundException;
+import javassist.bytecode.annotation.ClassMemberValue;
 import lombok.Data;
-import top.guyi.iot.ipojo.application.component.condition.ConditionOnMissBean;
+import top.guyi.iot.ipojo.compile.lib.cons.AnnotationNames;
+import top.guyi.iot.ipojo.compile.lib.utils.AnnotationUtils;
+import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
 
 import java.util.Set;
 
@@ -53,27 +55,15 @@ public class CompileClass {
     }
 
     public boolean isRegister(ClassPool pool,Set<CompileClass> components){
-        boolean register = true;
-        try {
-            ConditionOnMissBean conditionOnMissBean = (ConditionOnMissBean) this.classes.getAnnotation(ConditionOnMissBean.class);
-            if (conditionOnMissBean != null){
-                CtClass condition = pool.get(conditionOnMissBean.value().getName());
-                register = components
-                        .stream()
+        return AnnotationUtils.getAnnotation(this.classes, AnnotationNames.ConditionOnMissBean)
+                .flatMap(annotation -> AnnotationUtils.getAnnotationValue(annotation,"value"))
+                .map(value -> (ClassMemberValue) value)
+                .map(ClassMemberValue::getValue)
+                .map(value -> JavassistUtils.get(pool,value))
+                .map(condition -> components.stream()
                         .filter(component -> !component.equals(this))
-                        .noneMatch(component -> {
-                            try {
-                                return component.getClasses().subtypeOf(condition);
-                            } catch (NotFoundException e) {
-                                e.printStackTrace();
-                            }
-                            return false;
-                        });
-            }
-        } catch (ClassNotFoundException | NotFoundException e) {
-            e.printStackTrace();
-        }
-        return register;
+                        .noneMatch(component -> JavassistUtils.equalsType(component.getClasses(),condition)))
+                .orElse(true);
     }
 
 }

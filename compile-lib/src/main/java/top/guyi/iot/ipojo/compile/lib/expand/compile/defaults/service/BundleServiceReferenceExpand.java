@@ -1,15 +1,17 @@
 package top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.service;
 
+import javassist.bytecode.annotation.Annotation;
+import javassist.bytecode.annotation.ClassMemberValue;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.digest.DigestUtils;
-import top.guyi.iot.ipojo.application.ApplicationContext;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.cons.AnnotationNames;
+import top.guyi.iot.ipojo.compile.lib.cons.ClassNames;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
 import javassist.*;
-import org.osgi.framework.BundleContext;
-import top.guyi.iot.ipojo.application.osgi.service.reference.*;
+import top.guyi.iot.ipojo.compile.lib.utils.AnnotationUtils;
 
 import java.io.IOException;
 import java.util.*;
@@ -41,6 +43,7 @@ public class BundleServiceReferenceExpand implements CompileExpand {
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
         List<BundleServiceReferenceEntry> entries = new LinkedList<>();
         for (CompileClass component : components) {
+            component.getClasses().freeze();
             for (CtMethod method : this.getMethods(component.getClasses())) {
                 entries.add(new BundleServiceReferenceEntry(component,method));
             }
@@ -50,30 +53,32 @@ public class BundleServiceReferenceExpand implements CompileExpand {
             StringBuilder methodBody = new StringBuilder("{\n");
             Set<CompileClass> add = new HashSet<>();
             for (BundleServiceReferenceEntry entry : entries) {
-                BundleServiceReference reference = (BundleServiceReference) entry.method.getAnnotation(BundleServiceReference.class);
+                Annotation reference = AnnotationUtils.getAnnotation(entry.component.getClasses(),entry.method, AnnotationNames.BundleServiceReference).orElse(null);
+                if (reference != null){
+                    String checker = AnnotationUtils.getAnnotationValue(reference,"checker")
+                            .map(value -> ((ClassMemberValue) value).getValue())
+                            .filter(value -> !ClassNames.BundleServiceReferenceChecker.equals(value))
+                            .map(value -> String.format("$1.get(%s.class,true)",value))
+                            .orElse("null");
 
-                String checker = "null";
-                if (reference.checker() != BundleServiceReferenceChecker.class){
-                    checker = String.format("$1.get(%s.class,true)",reference.checker().getName());
+                    methodBody.append(String.format(
+                            "$0.register(new %s(%s,%s,%s));\n",
+                            ClassNames.ServiceReferenceEntry,
+                            this.getClassString(reference),
+                            this.invokerMethod(pool,add,entry.component.getClasses(),entry.method, compile),
+                            checker
+                    ));
                 }
-
-                methodBody.append(String.format(
-                        "$0.register(new %s(%s,%s,%s));\n",
-                        ServiceReferenceEntry.class.getName(),
-                        this.getClassString(reference),
-                        this.invokerMethod(pool,add,entry.component.getClasses(),entry.method, compile),
-                        checker
-                ));
             }
 
             methodBody.append("}");
 
             CtClass listener = pool.makeClass(String.format("%s.service.AutoDefaultBundleServiceListener", compile.getPackageName()));
-            listener.setSuperclass(pool.get(AbstractBundleServiceListener.class.getName()));
+            listener.setSuperclass(pool.get(ClassNames.AbstractBundleServiceListener));
             compile.addUseComponent(listener);
 
             CtMethod registerAll = new CtMethod(CtClass.voidType,"registerAll",new CtClass[]{
-                    pool.get(ApplicationContext.class.getName())
+                    pool.get(ClassNames.ApplicationContext)
             },listener);
 
             registerAll.setBody(methodBody.toString());
@@ -88,18 +93,17 @@ public class BundleServiceReferenceExpand implements CompileExpand {
     }
 
     private List<CtMethod> getMethods(CtClass component){
-        CtMethod[] ms = component.getMethods();
         return Arrays.stream(component.getMethods())
-                .filter(method -> method.hasAnnotation(BundleServiceReference.class))
+                .filter(method -> AnnotationUtils.getAnnotation(component,method,AnnotationNames.BundleServiceReference).isPresent())
                 .collect(Collectors.toList());
     }
 
-    private String getClassString(BundleServiceReference reference){
+    private String getClassString(Annotation reference){
         StringBuilder sb = new StringBuilder("new java.lang.Class[]{");
-        for (Class<?> classes : reference.value()) {
-            sb.append(classes.getName());
-            sb.append(".class,");
-        }
+        AnnotationUtils.getAnnotationValues(reference,"value")
+                .stream()
+                .map(value -> ((ClassMemberValue) value).getValue())
+                .forEach(value -> sb.append(value).append(".class,"));
         return sb.substring(0,sb.length() - 1) + "}";
     }
 
@@ -107,11 +111,11 @@ public class BundleServiceReferenceExpand implements CompileExpand {
         String className = String.format("%s.service.invoker.ServiceReferenceInvoker%s", compile.getPackageName(), DigestUtils.md5Hex(UUID.randomUUID().toString()));
 
         CtClass invoker = pool.makeClass(className);
-        invoker.setSuperclass(pool.get(AbstractServiceReferenceInvoker.class.getName()));
+        invoker.setSuperclass(pool.get(ClassNames.AbstractServiceReferenceInvoker));
         CtMethod invoke = new CtMethod(CtClass.voidType,"invoke",new CtClass[]{
-                pool.get(ServiceReferenceEntry.class.getName()),
-                pool.get(ApplicationContext.class.getName()),
-                pool.get(BundleContext.class.getName())
+                pool.get(ClassNames.ServiceReferenceEntry),
+                pool.get(ClassNames.ApplicationContext),
+                pool.get(ClassNames.BundleContext)
         },invoker);
 
         compile.addUseComponent(invoker);

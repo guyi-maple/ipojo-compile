@@ -5,15 +5,18 @@ import com.google.gson.annotations.SerializedName;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.NotFoundException;
+import javassist.bytecode.annotation.BooleanMemberValue;
 import lombok.Data;
 import org.apache.commons.io.IOUtils;
-import top.guyi.iot.ipojo.application.annotation.DynamicInject;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.CompileExclude;
+import top.guyi.iot.ipojo.compile.lib.cons.AnnotationNames;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.enums.JdkVersion;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.configuration.entry.ConfigurationKeyEntry;
+import top.guyi.iot.ipojo.compile.lib.utils.AnnotationUtils;
+import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -104,26 +107,16 @@ public class Compile {
     public Set<CompileClass> filterUseComponents(Set<CompileClass> components){
         return components
                 .stream()
-                .filter(component -> {
-                    if (component.getClasses().hasAnnotation(DynamicInject.class)){
-                        try {
-                            DynamicInject inject = (DynamicInject) component.getClasses().getAnnotation(DynamicInject.class);
-                            if (inject.superEquals()){
-                                for (CtClass useComponent : this.getUseComponents()) {
-                                    if (component.getClasses().subtypeOf(useComponent)){
-                                        return true;
-                                    }
-                                }
-                                return false;
-                            }else{
-                                return this.getUseComponents().contains(component.getClasses());
-                            }
-                        } catch (ClassNotFoundException | NotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    return true;
-                })
+                .filter(component -> AnnotationUtils.getAnnotation(component.getClasses(), AnnotationNames.DynamicInject)
+                        .map(annotation -> AnnotationUtils.getAnnotationValue(annotation,"superEquals")
+                                .map(value -> (BooleanMemberValue) value)
+                                .map(BooleanMemberValue::getValue)
+                                .filter(b -> b)
+                                .map(superEquals -> this.getUseComponents()
+                                        .stream()
+                                        .anyMatch(use -> JavassistUtils.equalsType(component.getClasses(),use)))
+                                .orElseGet(() -> this.getUseComponents().contains(component.getClasses())))
+                        .orElse(true))
                 .collect(Collectors.toSet());
     }
 

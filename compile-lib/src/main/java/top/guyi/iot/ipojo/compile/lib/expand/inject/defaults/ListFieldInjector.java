@@ -4,7 +4,7 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.NotFoundException;
-import top.guyi.iot.ipojo.application.utils.StringUtils;
+import top.guyi.iot.ipojo.compile.lib.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.classes.entry.FieldEntry;
 import top.guyi.iot.ipojo.compile.lib.expand.inject.FieldInjector;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;

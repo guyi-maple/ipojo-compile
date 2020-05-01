@@ -3,16 +3,12 @@ package top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.timer;
 import javassist.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import top.guyi.iot.ipojo.application.ApplicationContext;
-import top.guyi.iot.ipojo.application.osgi.timer.AbstractTimerManager;
-import top.guyi.iot.ipojo.application.osgi.timer.TimerRunnable;
-import top.guyi.iot.ipojo.application.osgi.timer.annotation.Timer;
-import top.guyi.iot.ipojo.application.osgi.timer.defaults.AbstractMethodTimerRunnable;
-import top.guyi.iot.ipojo.application.osgi.timer.enums.TimeType;
-import top.guyi.iot.ipojo.application.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.cons.AnnotationNames;
+import top.guyi.iot.ipojo.compile.lib.cons.ClassNames;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
+import top.guyi.iot.ipojo.compile.lib.utils.AnnotationUtils;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +19,7 @@ import java.util.stream.Collectors;
 class TimerEntry {
 
     private CtClass bean;
-    private Timer timer;
+    private TimeAnnotationEntry timer;
     private CtMethod method;
 
 }
@@ -40,26 +36,19 @@ public class TimeCompileExpand implements CompileExpand {
                 .stream()
                 .map(bean ->
                         Arrays.stream(bean.getClasses().getMethods())
-                                .map(method -> {
-                                    try {
-                                        Timer timer = (Timer) method.getAnnotation(Timer.class);
-                                        if (timer != null){
-                                            return new TimerEntry(bean.getClasses(),timer,method);
-                                        }
-                                    } catch (ClassNotFoundException e) {
-                                        e.printStackTrace();
-                                    }
-                                    return null;
-                                })
+                                .map(method -> AnnotationUtils
+                                        .getAnnotation(bean.getClasses(),method, AnnotationNames.Timer)
+                                        .map(annotation -> new TimerEntry(bean.getClasses(),new TimeAnnotationEntry(annotation),method))
+                                        .orElse(null))
+                                .filter(Objects::nonNull)
                                 .collect(Collectors.toSet())
                 )
                 .flatMap(Collection::stream)
-                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         if (!timers.isEmpty()) {
             CtClass timerRegister = pool.makeClass(String.format("%s.timer.DefaultTimeManager",compile.getPackageName()));
-            timerRegister.setSuperclass(pool.get(AbstractTimerManager.class.getName()));
+            timerRegister.setSuperclass(pool.get(ClassNames.AbstractTimerManager));
             compile.addUseComponent(timerRegister);
             CtMethod registerAll = new CtMethod(CtClass.voidType,"registerAll",new CtClass[0],timerRegister);
             StringBuilder registerMethodBody = new StringBuilder("{\n");
@@ -70,7 +59,7 @@ public class TimeCompileExpand implements CompileExpand {
                 compile.formatJavaVersion(run.getURL());
                 registerMethodBody.append(String.format(
                         "$0.register((%s)new %s());\n",
-                        TimerRunnable.class.getName(),
+                        ClassNames.TimerRunnable,
                         run.getName()
                 ));
             }
@@ -86,18 +75,18 @@ public class TimeCompileExpand implements CompileExpand {
     private CtClass createTimerRunnable(Compile compile,ClassPool pool,TimerEntry entry) throws NotFoundException, CannotCompileException {
         String classesName = String.format("%s.timer.runnable.TimerRunnable%s",compile.getPackageName(),UUID.randomUUID().toString().replaceAll("-",""));
         CtClass classes = pool.makeClass(classesName);
-        classes.setSuperclass(pool.get(AbstractMethodTimerRunnable.class.getName()));
+        classes.setSuperclass(pool.get(ClassNames.AbstractMethodTimerRunnable));
 
         CtConstructor constructor = new CtConstructor(new CtClass[0],classes);
         constructor.setBody(String.format(
                 "{super(\"%s\",%s,%s,%s.%s,%s.%s);}",
-                StringUtils.isEmpty(entry.getTimer().name()) ? UUID.randomUUID().toString() : entry.getTimer().name(),
-                entry.getTimer().initDelay(),
-                entry.getTimer().delay(),
-                TimeType.class.getName(),
-                entry.getTimer().type().toString(),
+                ("".equals(entry.getTimer().getName()))? UUID.randomUUID().toString() : entry.getTimer().getName(),
+                entry.getTimer().getInitDelay(),
+                entry.getTimer().getDelay(),
+                ClassNames.TimeType,
+                entry.getTimer().getType(),
                 TimeUnit.class.getName(),
-                entry.getTimer().unit().toString()
+                entry.getTimer().getUnit()
         ));
         classes.addConstructor(constructor);
 
@@ -115,7 +104,7 @@ public class TimeCompileExpand implements CompileExpand {
             argsBody.append(" ");
         }
 
-        CtMethod runMethod = new CtMethod(CtClass.voidType,"run",new CtClass[]{pool.get(ApplicationContext.class.getName())},classes);
+        CtMethod runMethod = new CtMethod(CtClass.voidType,"run",new CtClass[]{pool.get(ClassNames.ApplicationContext)},classes);
         runMethod.setBody(String.format(
                 "{((%s)$1.get(%s.class,true)).%s(%s);}",
                 entry.getBean().getName(),

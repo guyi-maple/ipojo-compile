@@ -1,20 +1,19 @@
 package top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.log;
 
-import top.guyi.iot.ipojo.application.osgi.log.Log;
-import top.guyi.iot.ipojo.application.osgi.log.AbstractLoggerRepository;
+import javassist.bytecode.annotation.StringMemberValue;
+import top.guyi.iot.ipojo.compile.lib.cons.AnnotationNames;
+import top.guyi.iot.ipojo.compile.lib.cons.ClassNames;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.log.entry.ComponentLoggerEntry;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.log.entry.LoggerEntry;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
+import top.guyi.iot.ipojo.compile.lib.utils.AnnotationUtils;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
 import javassist.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -34,17 +33,11 @@ public class LoggerExpand implements CompileExpand {
                 .map(component -> new ComponentLoggerEntry(
                         component,
                         Arrays.stream(component.getClasses().getDeclaredFields())
-                                .map(field -> {
-                                    try {
-                                        Log log = (Log) field.getAnnotation(Log.class);
-                                        if (log != null){
-                                            return new LoggerEntry(field,log.value());
-                                        }
-                                    } catch (ClassNotFoundException e) {
-                                        e.printStackTrace();
-                                    }
-                                    return null;
-                                })
+                                .filter(field -> AnnotationUtils.getAnnotation(component.getClasses(),field, AnnotationNames.Log).isPresent())
+                                .map(field -> AnnotationUtils
+                                        .getAnnotationValue(component.getClasses(),field,AnnotationNames.Log,"value")
+                                        .map(value -> new LoggerEntry(field,((StringMemberValue) value).getValue()))
+                                        .orElse(null))
                                 .filter(Objects::nonNull)
                                 .collect(Collectors.toList())
                         )
@@ -55,7 +48,7 @@ public class LoggerExpand implements CompileExpand {
                 .collect(Collectors.toList());
 
         CtClass repository = pool.makeClass(String.format("%s.DefaultAutoLoggerRepository",compile.getPackageName()));
-        repository.setSuperclass(pool.get(AbstractLoggerRepository.class.getName()));
+        repository.setSuperclass(pool.get(ClassNames.AbstractLoggerRepository));
         compile.addUseComponent(repository);
         if (compile.getType() == CompileType.BUNDLE){
             components.add(new CompileClass(repository,true,true,false));
@@ -64,7 +57,8 @@ public class LoggerExpand implements CompileExpand {
         entries.forEach(entry -> {
             try {
                 StringBuffer injectAfter = new StringBuffer();
-                CtMethod injectMethod = JavassistUtils.getInjectMethod(pool,entry.getComponent().getClasses());
+                CtMethod injectMethod = JavassistUtils.getInjectMethodNullable(pool,entry.getComponent().getClasses())
+                        .orElseThrow(RuntimeException::new);
                 entry.getLoggerEntry().forEach(logger -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(
                             entry.getComponent().getClasses(),logger.getField());
@@ -80,14 +74,14 @@ public class LoggerExpand implements CompileExpand {
                         injectAfter.append(String.format(
                                 "$0.%s(((%s)$1.get(%s.class)).get(\"%s\"));",
                                 setMethod.getName(),
-                                AbstractLoggerRepository.class.getName(),
-                                AbstractLoggerRepository.class.getName(),
+                                ClassNames.AbstractLoggerRepository,
+                                ClassNames.AbstractLoggerRepository,
                                 logger.getLoggerName()
                         ));
                     }
                 });
                 injectMethod.insertAfter(injectAfter.toString());
-            } catch (NotFoundException | CannotCompileException e) {
+            } catch (CannotCompileException e) {
                 e.printStackTrace();
             }
         });

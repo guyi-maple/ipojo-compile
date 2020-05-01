@@ -1,14 +1,15 @@
 package top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.stream;
 
 import javassist.*;
-import top.guyi.iot.ipojo.application.bean.interfaces.InitializingBean;
+import javassist.bytecode.annotation.BooleanMemberValue;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.cons.AnnotationNames;
+import top.guyi.iot.ipojo.compile.lib.cons.ClassNames;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.defaults.stream.entry.FieldEntry;
+import top.guyi.iot.ipojo.compile.lib.utils.AnnotationUtils;
 import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
-import top.guyi.iot.ipojo.module.stream.annotation.Awaiter;
-import top.guyi.iot.ipojo.module.stream.async.awaiter.MonoAwaiter;
 
 import java.util.Set;
 
@@ -41,18 +42,15 @@ public class AwaiterExpand implements CompileExpand {
     @Override
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
         CtClass object = pool.get(Object.class.getName());
-        CtClass initializingBean = pool.get(InitializingBean.class.getName());
+        CtClass initializingBean = pool.get(ClassNames.InitializingBean);
         components
                 .stream()
                 .map(component -> JavassistUtils.getFields(object,component.getClasses(), field -> {
-                    if (field.hasAnnotation(Awaiter.class)){
-                        boolean sync = false;
-                        try {
-                            Awaiter awaiter = (Awaiter) field.getAnnotation(Awaiter.class);
-                            sync = awaiter.sync();
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
-                        }
+                    if (field.hasAnnotation(AnnotationNames.Awaiter)){
+                        boolean sync = AnnotationUtils.getAnnotationValue(component.getClasses(),field,AnnotationNames.Awaiter,"sync")
+                                .map(value -> (BooleanMemberValue) value)
+                                .map(BooleanMemberValue::getValue)
+                                .orElse(false);
                         return new FieldEntry(sync,component.getClasses(),field);
                     }
                     return null;
@@ -64,7 +62,7 @@ public class AwaiterExpand implements CompileExpand {
                             String.format(
                                     "$0.%s = %s.create(%s);\n",
                                     field.getField().getName(),
-                                    MonoAwaiter.class.getName(),
+                                    ClassNames.MonoAwaiter,
                                     field.isSync()
                             )
                     ));

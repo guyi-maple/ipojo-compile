@@ -5,21 +5,16 @@ import com.google.gson.reflect.TypeToken;
 import javassist.ClassPool;
 import javassist.NotFoundException;
 import org.apache.commons.io.IOUtils;
-import top.guyi.iot.ipojo.application.utils.StringUtils;
+import top.guyi.iot.ipojo.compile.lib.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.exception.CompileInfoCheckException;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.maven.MavenHelper;
-import top.guyi.iot.ipojo.compile.lib.utils.AttachUtils;
+import top.guyi.iot.ipojo.compile.lib.utils.FileUtils;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,6 +22,7 @@ import java.util.stream.Collectors;
 public class CompileFactory {
 
     private final Gson gson = new Gson();
+    private final ClassPool pool;
 
     /**
      * 继承排除字段
@@ -38,31 +34,16 @@ public class CompileFactory {
             "symbolicName"
     );
 
-    /**
-     * 获取添加了依赖的类加载器
-     * @param project 项目实体
-     * @return 类加载器
-     */
-    private URLClassLoader getClassLoader(Project project){
-        Set<URL> urls = project.getDependencies().stream()
-                .map(dependency -> dependency.getURL(project).orElse(null))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        try {
-            urls.add(new URL(String.format("file:///%s",project.getWork())));
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        return new URLClassLoader(urls.toArray(new URL[0]));
+    public CompileFactory(ClassPool pool){
+        this.pool = pool;
     }
 
     /**
      * 添加依赖
      * @param configuration 编译配置
      * @param project 项目实体
-     * @param pool javassist
      */
-    private void addDependencies(Map<String,Object> configuration,Project project,ClassPool pool){
+    private void addDependencies(Map<String,Object> configuration,Project project){
         try{
             if (configuration.containsKey("project")){
                 Project new_project = this.gson.fromJson(
@@ -86,17 +67,18 @@ public class CompileFactory {
                 project.getDependencies().addAll(dependencies);
             }
 
-            // 添加编译期依赖
-            pool.appendClassPath(project.getWork());
-            for (Dependency dependency : project.getDependencies()) {
-                dependency.get(project).ifPresent(path -> {
-                    try {
-                        pool.appendClassPath(path);
-                    } catch (NotFoundException e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
+            project.getDependencies()
+                    .stream()
+                    .map(d -> d.get(project).orElse(null))
+                    .filter(Objects::nonNull)
+                    .forEach(path -> {
+                        try {
+                            this.pool.appendClassPath(path);
+                        } catch (NotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    });
+
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -105,18 +87,17 @@ public class CompileFactory {
     /**
      * 创建编译配置实体
      * @param project 项目实体
-     * @param pool javassist
      * @return 编译配置实体
      * @throws IOException
      * @throws CompileInfoCheckException
      */
-    public Compile create(Project project, ClassPool pool) throws IOException, CompileInfoCheckException {
+    public Compile create(Project project) throws IOException, CompileInfoCheckException {
         File file = new File(project.getWork() + "/ipojo.compile");
         if (!file.exists()){
             file = new File(project.getBaseDir() + "/ipojo.compile");
         }
 
-        Compile compile = this.create(file,project,pool);
+        Compile compile = this.create(file,project);
         compile.setType(Optional.ofNullable(compile.getType()).orElse(CompileType.COMPONENT));
         compile.getProject().extend(project);
 
@@ -127,12 +108,11 @@ public class CompileFactory {
      * 创建编译配置实体
      * @param file 编译配置文件
      * @param project 项目实体
-     * @param pool javassist
      * @return 编译配置实体
      * @throws IOException
      * @throws CompileInfoCheckException
      */
-    public Compile create(File file, Project project, ClassPool pool) throws IOException, CompileInfoCheckException {
+    public Compile create(File file, Project project) throws IOException, CompileInfoCheckException {
         if (!file.exists()){
             return null;
         }
@@ -155,7 +135,7 @@ public class CompileFactory {
             }
         }
 
-        this.addDependencies(configuration,project,pool);
+        this.addDependencies(configuration,project);
 
         extendConfiguration(configuration,getAllConfiguration(project));
 
@@ -175,21 +155,14 @@ public class CompileFactory {
      * @throws IOException
      */
     private void extendProfile(Map<String,Object> configuration, Set<String> names,Project project) throws IOException {
-        ClassLoader loader = this.getClassLoader(project);
         for (String name : names) {
-            AttachUtils.getProfileInputStream(loader,project.getBaseDir(),name).ifPresent(inputStream -> {
-                try {
-                    Map<String,Object> profileConfiguration = this.gson.fromJson(
-                            IOUtils.toString(inputStream, StandardCharsets.UTF_8)
-                            ,new TypeToken<Map<String,Object>>(){}.getType());
-                    profileConfiguration.forEach((key,value) -> {
-                        if (!this.excludeFields.contains(key)){
-                            configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)));
-                        }
-                    });
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            FileUtils.getAttachContent(project,name).ifPresent(attach -> {
+                Map<String,Object> profileConfiguration = this.gson.fromJson(attach,new TypeToken<Map<String,Object>>(){}.getType());
+                profileConfiguration.forEach((key,value) -> {
+                    if (!this.excludeFields.contains(key)){
+                        configuration.put(key,ExtendFieldFactory.extend(value,configuration.get(key)));
+                    }
+                });
             });
         }
     }
@@ -197,21 +170,14 @@ public class CompileFactory {
 
     /**
      * 获取继承的编译配置
-     * @param project 项目实体
+     * @param project 项目
      * @return 继承的编译配置
-     * @throws IOException
      */
-    private Map<String,Map<String,Object>> getAllConfiguration(Project project) throws IOException {
-        URLClassLoader loader = this.getClassLoader(project);
-        Map<String,Map<String,Object>> configurations = new HashMap<>();
-        Enumeration<URL> enumeration = loader.getResources("ipojo.compile");
-        while (enumeration.hasMoreElements()){
-            Map<String,Object> config = this.getConfiguration(
-                    IOUtils.toString(enumeration.nextElement().openStream(),StandardCharsets.UTF_8)
-            );
-            configurations.put(this.getName(config),config);
-        }
-        return configurations;
+    private Map<String,Map<String,Object>> getAllConfiguration(Project project) {
+        return FileUtils.getCompileFileContents(project.getLocalRepository(),project.getDependencies())
+                .stream()
+                .map(this::getConfiguration)
+                .collect(Collectors.toMap(this::getName, c -> c));
     }
 
     /**

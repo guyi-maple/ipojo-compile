@@ -2,7 +2,7 @@ package top.guyi.iot.compile.maven.mojo.configuration;
 
 import lombok.Data;
 import org.apache.maven.project.MavenProject;
-import top.guyi.iot.ipojo.application.utils.StringUtils;
+import top.guyi.iot.ipojo.compile.lib.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Repository;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Server;
@@ -26,6 +26,21 @@ public class FelixConfiguration {
 
     private Map<String,String> config;
     private List<Dependency> bundles;
+
+    public FelixConfiguration() {
+        this.config = new HashMap<>();
+        config.put("org.osgi.framework.storage.clean","onFirstInit");
+        config.put("felix.auto.deploy.action","install,start");
+
+        this.bundles = new LinkedList<>();
+        bundles.add(new Dependency("org.fusesource.jansi","jansi","1.17.1",null));
+        bundles.add(new Dependency("org.jline","jline","3.7.0",null));
+        bundles.add(new Dependency("org.apache.felix","org.apache.felix.eventadmin","1.5.0",null));
+        bundles.add(new Dependency("org.apache.felix","org.apache.felix.log","1.2.0",null));
+        bundles.add(new Dependency("org.apache.felix","org.apache.felix.gogo.runtime","1.1.0",null));
+        bundles.add(new Dependency("org.apache.felix","org.apache.felix.gogo.command","1.0.2",null));
+        bundles.add(new Dependency("org.apache.felix","org.apache.felix.gogo.jline","1.1.0",null));
+    }
 
     public void setConfig(Map<String, String> config) {
         if (!config.containsKey("org.osgi.framework.storage.clean")){

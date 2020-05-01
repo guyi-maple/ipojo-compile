@@ -2,10 +2,7 @@ package top.guyi.iot.ipojo.compile.lib.compile.defaults;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import javassist.CtClass;
 import javassist.NotFoundException;
-import top.guyi.iot.ipojo.application.annotation.DynamicInject;
-import top.guyi.iot.ipojo.compile.lib.classes.ClassCompiler;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.*;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
 import javassist.ClassPool;

@@ -1,9 +1,11 @@
 package top.guyi.iot.ipojo.compile.lib.classes;
 
-import top.guyi.iot.ipojo.application.ApplicationContext;
-import top.guyi.iot.ipojo.application.annotation.Resource;
-import top.guyi.iot.ipojo.application.component.ComponentInterface;
-import top.guyi.iot.ipojo.application.utils.StringUtils;
+import javassist.bytecode.annotation.BooleanMemberValue;
+import javassist.bytecode.annotation.StringMemberValue;
+import top.guyi.iot.ipojo.compile.lib.cons.AnnotationNames;
+import top.guyi.iot.ipojo.compile.lib.cons.ClassNames;
+import top.guyi.iot.ipojo.compile.lib.utils.AnnotationUtils;
+import top.guyi.iot.ipojo.compile.lib.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.classes.entry.FieldEntry;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.expand.inject.FieldInjector;
@@ -21,43 +23,49 @@ public class ClassEditor {
     private CtClass componentInterfaceClass;
     private CtClass getApplicationClass(ClassPool pool) throws NotFoundException {
         if (this.applicationClass == null){
-            this.applicationClass = pool.get(ApplicationContext.class.getName());
+            this.applicationClass = pool.get(ClassNames.ApplicationContext);
         }
         return this.applicationClass;
     }
     private CtClass getComponentInterfaceClass(ClassPool pool) throws NotFoundException {
         if (this.componentInterfaceClass == null){
-            this.componentInterfaceClass = pool.get(ComponentInterface.class.getName());
+            this.componentInterfaceClass = pool.get(ClassNames.ComponentInterface);
         }
         return this.componentInterfaceClass;
     }
 
     public String getInjectMethodBody(ClassPool pool,CtClass classes, Compile compile) throws NotFoundException {
         StringBuilder sb = new StringBuilder("{");
-        List<FieldEntry> fields = JavassistUtils.getFields(pool.get(Object.class.getName()),classes,field -> {
-            try {
-                Resource resource = (Resource) field.getAnnotation(Resource.class);
-                if (resource != null){
-                    if (StringUtils.isEmpty(resource.name())){
-                        return new FieldEntry(field,resource.equals());
-                    }else{
-                        return new FieldEntry(field,resource.name(),resource.equals());
-                    }
-                }
-                javax.annotation.Resource r = (javax.annotation.Resource) field.getAnnotation(javax.annotation.Resource.class);
-                if (r != null){
-                    if (StringUtils.isEmpty(r.name())){
-                        return new FieldEntry(field,false);
-                    }else{
-                        return new FieldEntry(field,r.name(),false);
-                    }
-                }
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-            return null;
-        });
-        fields.stream()
+        JavassistUtils.getFields(
+                pool.get(Object.class.getName()),
+                classes,field ->
+                        AnnotationUtils.getAnnotation(classes, AnnotationNames.Resource)
+                                .flatMap(resource -> AnnotationUtils.getAnnotationValue(resource,"name"))
+                                .map(name -> (StringMemberValue) name)
+                                .map(StringMemberValue::getValue)
+                                .map(name -> new FieldEntry(
+                                        field,
+                                        StringUtils.isEmpty(name) ? null : name,
+                                        AnnotationUtils.getAnnotationValue(classes,AnnotationNames.Resource,"equals")
+                                                .map(equals -> (BooleanMemberValue) equals)
+                                                .map(BooleanMemberValue::getValue)
+                                                .orElse(false)))
+                                .orElseGet(() -> {
+                                    try {
+                                        javax.annotation.Resource r = (javax.annotation.Resource) field.getAnnotation(javax.annotation.Resource.class);
+                                        if (r != null){
+                                            if (StringUtils.isEmpty(r.name())){
+                                                return new FieldEntry(field,false);
+                                            }else{
+                                                return new FieldEntry(field,r.name(),false);
+                                            }
+                                        }
+                                    } catch (ClassNotFoundException e) {
+                                        e.printStackTrace();
+                                    }
+                                    return null;
+                                }))
+                .stream()
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
                     FieldInjector injector = injectorFactory.get(field,pool);
@@ -68,14 +76,15 @@ public class ClassEditor {
                 })
                 .filter(Objects::nonNull)
                 .forEach(sb::append);
+
         sb.append("}");
         return sb.toString();
     }
 
-    public void addInjectMethod(ClassPool pool, CtClass classes, Compile compile) throws CannotCompileException, NotFoundException {
-        try{
+    public void addInjectMethod(ClassPool pool, CtClass classes, Compile compile) throws NotFoundException, CannotCompileException {
+        try {
             JavassistUtils.getInjectMethod(pool,classes);
-        }catch (NotFoundException e){
+        } catch (NotFoundException e) {
             classes.addInterface(this.getComponentInterfaceClass(pool));
             CtMethod method = new CtMethod(CtClass.voidType,"inject",new CtClass[]{this.getApplicationClass(pool)},classes);
             method.setBody(this.getInjectMethodBody(pool,classes,compile));

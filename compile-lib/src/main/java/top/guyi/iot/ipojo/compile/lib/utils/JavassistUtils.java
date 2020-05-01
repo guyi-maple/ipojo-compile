@@ -1,13 +1,12 @@
 package top.guyi.iot.ipojo.compile.lib.utils;
 
-import top.guyi.iot.ipojo.application.ApplicationContext;
+import lombok.SneakyThrows;
 import javassist.*;
-import top.guyi.iot.ipojo.application.annotation.Resource;
-import top.guyi.iot.ipojo.application.utils.StringUtils;
-import top.guyi.iot.ipojo.compile.lib.classes.entry.FieldEntry;
 import top.guyi.iot.ipojo.compile.lib.classes.exception.SetMethodNotFoundException;
+import top.guyi.iot.ipojo.compile.lib.cons.ClassNames;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,7 +14,7 @@ import java.util.stream.Collectors;
 
 public class JavassistUtils {
 
-    private static Pattern genericPattern = Pattern.compile("<L((.)+)>");
+    private static final Pattern genericPattern = Pattern.compile("<L((.)+)>");
 
     public static void main(String[] args) {
         String str = "Ljava/util/Map<Ljava/lang/String;Ltop/guyi/test/ServiceInterface;>;";
@@ -86,8 +85,33 @@ public class JavassistUtils {
         return setMethod;
     }
 
-    public static CtMethod getInjectMethod(ClassPool pool,CtClass classes) throws NotFoundException {
-        return classes.getDeclaredMethod("inject",new CtClass[]{pool.get(ApplicationContext.class.getName())});
+    @SneakyThrows
+    public static Optional<CtConstructor> getDeclaredConstructor(CtClass classes,CtClass[] args){
+        return Optional.ofNullable(classes.getDeclaredConstructor(args));
+    }
+
+
+    @SneakyThrows
+    public static void insertAfter(CtMethod method, String body){
+        method.insertAfter(body);
+    }
+
+    @SneakyThrows
+    public static void insertAfter(CtConstructor constructor, String body){
+        constructor.insertAfter(body);
+    }
+
+    public static Optional<CtMethod> getInjectMethodNullable(ClassPool pool, CtClass classes) {
+        try {
+            return Optional.ofNullable(classes.getDeclaredMethod("inject",new CtClass[]{pool.get(ClassNames.ApplicationContext)}));
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
+    }
+
+    public static CtMethod getInjectMethod(ClassPool pool, CtClass classes) throws NotFoundException {
+        return classes.getDeclaredMethod("inject",new CtClass[]{pool.get(ClassNames.ApplicationContext)});
     }
 
     private static Map<String,CtField> listField(CtClass stopClass,CtClass classes,Map<String,CtField> fields){
@@ -117,6 +141,46 @@ public class JavassistUtils {
                 .map(converter)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    public static <T> List<T> getFields(CtClass stopClass, CtClass classes, BiFunction<CtClass,CtField,T> converter){
+        return listField(stopClass,classes,new HashMap<>()).values()
+                .stream()
+                .map(field -> converter.apply(classes,field))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    public static Optional<CtClass> getFieldType(CtField field){
+        try {
+            return Optional.ofNullable(field.getType());
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
+    }
+
+    public static boolean equalsType(CtClass classes,CtClass type){
+        try {
+            return classes.subtypeOf(type);
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean equalsType(CtField field,CtClass type){
+        try {
+            return equalsType(field.getType(),type);
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @SneakyThrows
+    public static CtClass get(ClassPool pool,String className){
+        return pool.get(className);
     }
 
 }

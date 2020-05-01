@@ -1,18 +1,10 @@
 package top.guyi.iot.ipojo.compile.lib.compile.defaults;
 
-import top.guyi.iot.ipojo.application.ApplicationContext;
-import top.guyi.iot.ipojo.application.annotation.DynamicInject;
-import top.guyi.iot.ipojo.application.bean.ComponentInfo;
-import top.guyi.iot.ipojo.application.bean.interfaces.ApplicationStartEvent;
-import top.guyi.iot.ipojo.application.bean.interfaces.ApplicationStartSuccessEvent;
-import top.guyi.iot.ipojo.application.bean.interfaces.ApplicationStopEvent;
-import top.guyi.iot.ipojo.application.osgi.AbstractApplicationActivator;
-import top.guyi.iot.ipojo.application.osgi.env.EnvMap;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.*;
 import top.guyi.iot.ipojo.compile.lib.compile.CompileTypeHandler;
 import javassist.*;
-import org.osgi.framework.BundleContext;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
+import top.guyi.iot.ipojo.compile.lib.cons.ClassNames;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 
 import java.util.Set;
@@ -45,11 +37,11 @@ public class BundleTypeHandler implements CompileTypeHandler {
         // 创建类对象
         CtClass activator = pool.makeClass(String.format("%s.Activator", compile.getPackageName()));
         CtMethod registerMethod = new CtMethod(CtClass.voidType, "registerComponent", new CtClass[]{
-                pool.get(ApplicationContext.class.getName()),
-                pool.get(BundleContext.class.getName())
+                pool.get(ClassNames.ApplicationContext),
+                pool.get(ClassNames.BundleContext)
         }, activator);
         // 继承拓展抽象类
-        activator.setSuperclass(pool.get(AbstractApplicationActivator.class.getName()));
+        activator.setSuperclass(pool.get(ClassNames.AbstractApplicationActivator));
 
         // 注册组件
         Set<CompileClass> tmpComponents = compile.filterUseComponents(components)
@@ -68,7 +60,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
 
         //实现onStart方法
         StringBuffer onStartMethodBody = new StringBuffer("{");
-        CtClass onStartClass = pool.get(ApplicationStartEvent.class.getName());
+        CtClass onStartClass = pool.get(ClassNames.ApplicationStartEvent);
         components
                 .stream()
                 .filter(CompileClass::isComponent)
@@ -83,14 +75,14 @@ public class BundleTypeHandler implements CompileTypeHandler {
                 .forEach(component -> onStartMethodBody.append(
                         String.format(
                                 "((%s)$1.get(%s.class,true)).onStart($1,$2);\n",
-                                ApplicationStartEvent.class.getName(),
+                                ClassNames.ApplicationStartEvent,
                                 component.getClasses().getName()
                         )
                 ));
         onStartMethodBody.append("}");
         CtMethod onStartMethod = new CtMethod(CtClass.voidType,"onStart",new CtClass[]{
-                pool.get(ApplicationContext.class.getName()),
-                pool.get(BundleContext.class.getName())
+                pool.get(ClassNames.ApplicationContext),
+                pool.get(ClassNames.BundleContext)
         },activator);
         onStartMethod.setExceptionTypes(new CtClass[]{pool.get(Exception.class.getName())});
         onStartMethod.setBody(onStartMethodBody.toString());
@@ -98,7 +90,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
 
         //实现onStartSuccess方法
         StringBuffer onStartSuccessMethodBody = new StringBuffer("{");
-        CtClass onStartSuccessClass = pool.get(ApplicationStartSuccessEvent.class.getName());
+        CtClass onStartSuccessClass = pool.get(ClassNames.ApplicationStartSuccessEvent);
         components
                 .stream()
                 .filter(CompileClass::isComponent)
@@ -113,14 +105,14 @@ public class BundleTypeHandler implements CompileTypeHandler {
                 .forEach(component -> onStartSuccessMethodBody.append(
                         String.format(
                                 "((%s)$1.get(%s.class,true)).onStartSuccess($1,$2);\n",
-                                ApplicationStartSuccessEvent.class.getName(),
+                                ClassNames.ApplicationStartSuccessEvent,
                                 component.getClasses().getName()
                         )
                 ));
         onStartSuccessMethodBody.append("}");
         CtMethod onStartSuccessMethod = new CtMethod(CtClass.voidType,"onStartSuccess",new CtClass[]{
-                pool.get(ApplicationContext.class.getName()),
-                pool.get(BundleContext.class.getName())
+                pool.get(ClassNames.ApplicationContext),
+                pool.get(ClassNames.BundleContext)
         },activator);
         onStartSuccessMethod.setExceptionTypes(new CtClass[]{pool.get(Exception.class.getName())});
         onStartSuccessMethod.setBody(onStartSuccessMethodBody.toString());
@@ -128,7 +120,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
 
         // 实现onStop方法
         StringBuffer onStopMethodBody = new StringBuffer("{");
-        CtClass onStopCLasses = pool.get(ApplicationStopEvent.class.getName());
+        CtClass onStopCLasses = pool.get(ClassNames.ApplicationStopEvent);
         components
                 .stream()
                 .filter(CompileClass::isComponent)
@@ -143,14 +135,14 @@ public class BundleTypeHandler implements CompileTypeHandler {
                 .forEach(component -> onStopMethodBody.append(
                         String.format(
                                 "((%s)$1.get(%s.class,true)).onStop($1,$2);\n",
-                                ApplicationStopEvent.class.getName(),
+                                ClassNames.ApplicationStopEvent,
                                 component.getClasses().getName()
                         )
                 ));
         onStopMethodBody.append("}");
         CtMethod onStopMethod = new CtMethod(CtClass.voidType,"onStop",new CtClass[]{
-                pool.get(ApplicationContext.class.getName()),
-                pool.get(BundleContext.class.getName())
+                pool.get(ClassNames.ApplicationContext),
+                pool.get(ClassNames.BundleContext)
         },activator);
         onStopMethod.setBody(onStopMethodBody.toString());
         activator.addMethod(onStopMethod);
@@ -162,10 +154,10 @@ public class BundleTypeHandler implements CompileTypeHandler {
         activator.addMethod(getNameMethod);
 
         // 实现getEnv方法
-        CtMethod getEnvMethod = new CtMethod(pool.get(EnvMap.class.getName()),"getEnv",new CtClass[0],activator);
+        CtMethod getEnvMethod = new CtMethod(pool.get(ClassNames.EnvMap),"getEnv",new CtClass[0],activator);
         StringBuffer sb = new StringBuffer();
         sb.append("{\n");
-        sb.append(String.format("%s env = new %s();\n",EnvMap.class.getName(), EnvMap.class.getName()));
+        sb.append(String.format("%s env = new %s();\n",ClassNames.EnvMap, ClassNames.EnvMap));
         compile.getEnv().forEach((key,value) ->
                 sb.append(String.format("env.put(\"%s\",\"%s\");\n",key,value)));
         sb.append("return env; \n}");
@@ -181,7 +173,7 @@ public class BundleTypeHandler implements CompileTypeHandler {
         return String.format(
                 "$1.register().put(%s.class,new %s(\"%s\",%s,%s));\n",
                 component.getClasses().getName(),
-                ComponentInfo.class.getName(),
+                ClassNames.ComponentInfo,
                 component.getName(),
                 component.getOrder(),
                 component.isProxy()

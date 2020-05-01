@@ -2,11 +2,15 @@ package top.guyi.iot.ipojo.compile.lib.classes;
 
 import com.google.gson.Gson;
 import javassist.CtClass;
+import javassist.bytecode.annotation.BooleanMemberValue;
+import javassist.bytecode.annotation.IntegerMemberValue;
+import javassist.bytecode.annotation.StringMemberValue;
 import org.apache.commons.io.IOUtils;
-import top.guyi.iot.ipojo.application.annotation.Component;
 import javassist.ClassPool;
 import javassist.NotFoundException;
-import top.guyi.iot.ipojo.application.utils.StringUtils;
+import top.guyi.iot.ipojo.compile.lib.cons.AnnotationNames;
+import top.guyi.iot.ipojo.compile.lib.utils.AnnotationUtils;
+import top.guyi.iot.ipojo.compile.lib.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentEntry;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.ComponentInfo;
@@ -16,9 +20,7 @@ import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import java.io.File;
 import java.io.IOException;
 import java.net.JarURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -93,22 +95,24 @@ public class ClassScanner {
     public Set<CompileClass> getComponent(ClassPool pool, Compile compile) throws IOException, NotFoundException {
         return this.scan(pool,compile)
                 .stream()
-                .map(classes -> {
-                    try {
-                        Component component = (Component) classes.getClasses().getAnnotation(Component.class);
-                        if (component != null){
-                            classes.setProxy(component.proxy());
-                            classes.setOrder(component.order());
-                            if (!StringUtils.isEmpty(component.name())){
-                                classes.setName(component.name());
-                            }
-                            return classes;
-                        }
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                    return null;
-                })
+                .map(component -> AnnotationUtils.getAnnotation(component.getClasses(), AnnotationNames.Component)
+                        .map(annotation -> {
+                            AnnotationUtils.getAnnotationValue(annotation,"proxy")
+                                    .map(value -> (BooleanMemberValue) value)
+                                    .map(BooleanMemberValue::getValue)
+                                    .ifPresent(component::setProxy);
+                            AnnotationUtils.getAnnotationValue(annotation,"order")
+                                    .map(value -> (IntegerMemberValue) value)
+                                    .map(IntegerMemberValue::getValue)
+                                    .ifPresent(component::setOrder);
+                            AnnotationUtils.getAnnotationValue(annotation,"name")
+                                    .map(value -> (StringMemberValue) value)
+                                    .map(StringMemberValue::getValue)
+                                    .filter(name -> !StringUtils.isEmpty(name))
+                                    .ifPresent(component::setName);
+                            return component;
+                        })
+                        .orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
