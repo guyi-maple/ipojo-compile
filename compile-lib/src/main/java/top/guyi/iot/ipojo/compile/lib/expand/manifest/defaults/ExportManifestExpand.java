@@ -2,6 +2,7 @@ package top.guyi.iot.ipojo.compile.lib.expand.manifest.defaults;
 
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.bytecode.annotation.BooleanMemberValue;
 import javassist.bytecode.annotation.ClassMemberValue;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
@@ -23,12 +24,16 @@ public class ExportManifestExpand implements ManifestExpand {
     @Override
     public List<Manifest> execute(ClassPool pool, Set<CompileClass> components, Compile compile) {
         Set<String> packages = components.stream()
-                .filter(component -> AnnotationUtils.getAnnotation(component.getClasses(), AnnotationNames.Service).isPresent())
                 .map(component -> AnnotationUtils
-                        .getAnnotationValue(component.getClasses(),AnnotationNames.Service,"export")
-                        .map(export -> (ClassMemberValue) export)
+                        .getAnnotation(component.getClasses(),AnnotationNames.Service)
+                        .filter(annotation -> AnnotationUtils.getAnnotationValue(annotation,"export")
+                                .map(export -> (BooleanMemberValue) export)
+                                .map(BooleanMemberValue::getValue)
+                                .orElse(true))
+                        .flatMap(annotation -> AnnotationUtils.getAnnotationValue(annotation,"value"))
+                        .map(value -> (ClassMemberValue) value)
                         .map(ClassMemberValue::getValue)
-                        .map(export -> JavassistUtils.get(pool,export))
+                        .map(value -> JavassistUtils.get(pool,value))
                         .map(CtClass::getPackageName)
                         .orElse(null))
                 .filter(Objects::nonNull)
