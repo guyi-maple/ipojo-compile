@@ -39,14 +39,14 @@ public class ClassEditor {
         JavassistUtils.getFields(
                 pool.get(Object.class.getName()),
                 classes,field ->
-                        AnnotationUtils.getAnnotation(classes, AnnotationNames.Resource)
-                                .flatMap(resource -> AnnotationUtils.getAnnotationValue(resource,"name"))
-                                .map(name -> (StringMemberValue) name)
-                                .map(StringMemberValue::getValue)
-                                .map(name -> new FieldEntry(
+                        AnnotationUtils.getAnnotation(classes, field,AnnotationNames.Resource)
+                                .map(annotation -> new FieldEntry(
                                         field,
-                                        StringUtils.isEmpty(name) ? null : name,
-                                        AnnotationUtils.getAnnotationValue(classes,AnnotationNames.Resource,"equals")
+                                        AnnotationUtils.getAnnotationValue(annotation,"name")
+                                                .map(name -> (StringMemberValue) name)
+                                                .map(StringMemberValue::getValue)
+                                                .orElse(""),
+                                        AnnotationUtils.getAnnotationValue(annotation,"equals")
                                                 .map(equals -> (BooleanMemberValue) equals)
                                                 .map(BooleanMemberValue::getValue)
                                                 .orElse(false)))
@@ -64,8 +64,8 @@ public class ClassEditor {
                                         e.printStackTrace();
                                     }
                                     return null;
-                                }))
-                .stream()
+                                })
+        ).stream()
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
                     FieldInjector injector = injectorFactory.get(field,pool);

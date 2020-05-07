@@ -15,6 +15,7 @@ import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpand;
 import javassist.ClassPool;
 import top.guyi.iot.ipojo.compile.lib.expand.compile.CompileExpandFactory;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.ManifestExpandFactory;
+import top.guyi.iot.ipojo.compile.lib.utils.JavassistUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

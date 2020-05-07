@@ -42,6 +42,7 @@ public class FelixMojo extends AbstractMojo {
                     new FileReader(json),
                     FelixConfiguration.class
             );
+            configuration.init();
         }else{
             configuration = new FelixConfiguration();
             configuration.setConfig(new HashMap<>());

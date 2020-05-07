@@ -27,12 +27,12 @@ public class FelixConfiguration {
     private Map<String,String> config;
     private List<Dependency> bundles;
 
-    public FelixConfiguration() {
-        this.config = new HashMap<>();
+    public void init(){
+        this.config = Optional.ofNullable(this.config).orElseGet(HashMap::new);
         config.put("org.osgi.framework.storage.clean","onFirstInit");
         config.put("felix.auto.deploy.action","install,start");
 
-        this.bundles = new LinkedList<>();
+        this.bundles = Optional.ofNullable(this.bundles).orElseGet(LinkedList::new);
         bundles.add(new Dependency("org.fusesource.jansi","jansi","1.17.1",null));
         bundles.add(new Dependency("org.jline","jline","3.7.0",null));
         bundles.add(new Dependency("org.apache.felix","org.apache.felix.eventadmin","1.5.0",null));
