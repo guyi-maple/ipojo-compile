@@ -64,8 +64,8 @@ public class ClassEditor {
                                         e.printStackTrace();
                                     }
                                     return null;
-                                })
-        ).stream()
+                                }))
+                .stream()
                 .map(field -> {
                     CtMethod setMethod = JavassistUtils.getSetMethod(classes,field.getField());
                     FieldInjector injector = injectorFactory.get(field,pool);

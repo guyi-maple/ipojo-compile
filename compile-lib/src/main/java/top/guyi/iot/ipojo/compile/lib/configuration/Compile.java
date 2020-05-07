@@ -107,16 +107,13 @@ public class Compile {
     public Set<CompileClass> filterUseComponents(Set<CompileClass> components){
         return components
                 .stream()
-                .filter(component -> AnnotationUtils.getAnnotation(component.getClasses(), AnnotationNames.DynamicInject)
-                        .map(annotation -> AnnotationUtils.getAnnotationValue(annotation,"superEquals")
-                                .map(value -> (BooleanMemberValue) value)
-                                .map(BooleanMemberValue::getValue)
-                                .filter(b -> b)
-                                .map(superEquals -> this.getUseComponents()
-                                        .stream()
-                                        .anyMatch(use -> JavassistUtils.equalsType(component.getClasses(),use)))
-                                .orElseGet(() -> this.getUseComponents().contains(component.getClasses())))
-                        .orElse(true))
+                .filter(component ->
+                        AnnotationUtils.getAnnotation(component.getClasses(), AnnotationNames.DynamicInject)
+                                .map(annotation -> this.useComponents.stream().anyMatch(use ->
+                                        use.getName().equals(component.getClasses().getName())
+                                                || JavassistUtils.equalsType(component.getClasses(),use)))
+                                .orElse(true)
+                )
                 .collect(Collectors.toSet());
     }
 
