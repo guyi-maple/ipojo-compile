@@ -42,7 +42,11 @@ public class BundleServiceReferenceExpand implements CompileExpand {
     @Override
     public Set<CompileClass> execute(ClassPool pool, Compile compile, Set<CompileClass> components) throws Exception {
         List<BundleServiceReferenceEntry> entries = new LinkedList<>();
-        for (CompileClass component : components) {
+        Set<CompileClass> tmpComponents = compile.filterUseComponents(components)
+                .stream()
+                .filter(CompileClass::isComponent)
+                .collect(Collectors.toSet());
+        for (CompileClass component : tmpComponents) {
             component.getClasses().freeze();
             for (CtMethod method : this.getMethods(component.getClasses())) {
                 entries.add(new BundleServiceReferenceEntry(component,method));
