@@ -174,7 +174,7 @@ public class CompileFactory {
      * @return 继承的编译配置
      */
     private Map<String,Map<String,Object>> getAllConfiguration(Project project) {
-        return FileUtils.getCompileFileContents(project.getLocalRepository(),project.getDependencies())
+        return FileUtils.getCompileFileContents(project)
                 .stream()
                 .map(this::getConfiguration)
                 .collect(Collectors.toMap(this::getName, c -> c));

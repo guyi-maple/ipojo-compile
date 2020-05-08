@@ -31,31 +31,25 @@ import java.util.stream.Collectors;
 
 public class MavenHelper {
 
-    public static Set<top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency> getDependencies(Project project,top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency root){
-        return getDependencies(root,project.getLocalRepository(),project.getRepositories(),project.getServers());
-    }
-
-    private static RepositorySystemSession buildSession(top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency root,RepositorySystem system,String localRepository){
-        return root.get(localRepository)
+    private static RepositorySystemSession buildSession(top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency root,RepositorySystem system,Project project){
+        return root.get(project)
                 .filter(path -> Files.exists(Paths.get(path)))
                 .map(p -> {
                     DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
-                    LocalRepository localRepo = new LocalRepository( localRepository);
+                    LocalRepository localRepo = new LocalRepository( project.getLocalRepository());
                     session.setLocalRepositoryManager( system.newLocalRepositoryManager( session, localRepo ));
                     return session;
                 })
-                .orElseGet(() -> Booter.newRepositorySystemSession(system,localRepository));
+                .orElseGet(() -> Booter.newRepositorySystemSession(system,project.getLocalRepository()));
     }
 
     public static Set<top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency> getDependencies(
-            top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency root,
-            String localRepository,
-            List<Repository> repositories,
-            Set<Server> servers){
+            Project project,
+            top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency root){
         try {
             RepositorySystem system = Booter.newRepositorySystem();
-            RepositorySystemSession session = buildSession(root,system,localRepository);
-            CollectRequest request = buildRequest(root,repositories,servers);
+            RepositorySystemSession session = buildSession(root,system,project);
+            CollectRequest request = buildRequest(root,project.getRepositories(),project.getServers());
             CollectResult result = system.collectDependencies( session, request );
             Set<top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency> dependencies = new HashSet<>();
             result.getRoot().accept(new DependencyVisitor() {
@@ -80,7 +74,7 @@ public class MavenHelper {
 
             dependencies
                     .stream()
-                    .filter(dependency -> dependency.get(localRepository)
+                    .filter(dependency -> dependency.get(project)
                             .map(path -> Files.notExists(Paths.get(path)))
                             .orElse(false))
                     .forEach(dependency -> resolveArtifact(request,system,session,dependency.getName()));

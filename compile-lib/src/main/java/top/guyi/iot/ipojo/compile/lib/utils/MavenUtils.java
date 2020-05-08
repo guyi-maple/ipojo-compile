@@ -11,12 +11,15 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
+import top.guyi.iot.ipojo.compile.lib.maven.MavenHelper;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,16 +62,12 @@ public class MavenUtils {
     }
 
     public static Optional<String> get(Project project,Dependency dependency){
-        return get(project.getLocalRepository(),dependency);
-    }
-
-    public static Optional<String> get(String localRepository,Dependency dependency){
         if (dependency.getVersion().toLowerCase().endsWith("-snapshot")){
-            return getSnapshot(localRepository,dependency);
+            return getSnapshot(project,dependency);
         }else{
             return Optional.of(String.format(
                     "%s/%s/%s/%s/%s-%s.jar",
-                    localRepository,
+                    project.getLocalRepository(),
                     dependency.getGroupId().replaceAll("\\.", "/"),
                     dependency.getArtifactId(),
                     dependency.getVersion(),
@@ -89,10 +88,10 @@ public class MavenUtils {
                 version.getValue());
     }
 
-    public static Optional<String> getSnapshot(String localRepository, Dependency dependency){
+    public static Optional<String> getSnapshot(Project project, Dependency dependency){
         String base = String.format(
                 "%s/%s/%s/%s",
-                localRepository,
+                project.getLocalRepository(),
                 dependency.getGroupId().replaceAll("\\.", "/"),
                 dependency.getArtifactId(),
                 dependency.getVersion()
@@ -103,10 +102,14 @@ public class MavenUtils {
                 .orElseGet(Stream::empty)
                 .map(MavenUtils::getSnapshotVersion)
                 .filter(Objects::nonNull)
-                .filter(v -> new File(getLocation(localRepository,dependency,v)).exists())
                 .max(Comparator.comparing(SnapshotVersion::getLastUpdated));
 
-        return version.map(v -> getLocation(localRepository,dependency,v));
+        if (version.isPresent()
+                && Files.notExists(Paths.get(getLocation(project.getLocalRepository(),dependency,version.get())))) {
+            MavenHelper.getDependencies(project,dependency);
+        }
+
+        return version.map(v -> getLocation(project.getLocalRepository(),dependency,v));
     }
 
 }

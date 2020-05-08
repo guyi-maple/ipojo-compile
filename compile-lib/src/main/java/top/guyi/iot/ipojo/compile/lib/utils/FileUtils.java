@@ -27,9 +27,9 @@ public class FileUtils {
     public static final String ATTACH_SUFFIX = ".attach";
     public static final String COMPILE_FILE_NAME = "ipojo.compile";
 
-    public static Stream<String> getFileContents(String name,String localRepository,Set<Dependency> dependencies){
-        return dependencies.stream()
-                .map(d -> MavenUtils.get(localRepository,d).orElse(null))
+    public static Stream<String> getFileContents(String name,Project project){
+        return project.getDependencies().stream()
+                .map(d -> MavenUtils.get(project,d).orElse(null))
                 .filter(Objects::nonNull)
                 .map(path -> {
                     try {
@@ -51,21 +51,20 @@ public class FileUtils {
 
     /**
      * 获取所有ipojo.compile文件内容
-     * @param localRepository 本地仓库路径
-     * @param dependencies 依赖列表
+     * @param project 项目
      * @return 内容
      */
-    public static List<String> getCompileFileContents(String localRepository,Set<Dependency> dependencies){
-        return getFileContents(COMPILE_FILE_NAME,localRepository,dependencies).collect(Collectors.toList());
+    public static List<String> getCompileFileContents(Project project){
+        return getFileContents(COMPILE_FILE_NAME,project).collect(Collectors.toList());
     }
 
     /**
      * 获取Attach数据
-     * @param project 项目
      * @param pathOrName 路径或名称
+     * @param project 项目
      * @return Attach数据
      */
-    public static Optional<String> getAttachContent(Project project, String pathOrName) throws IOException {
+    public static Optional<String> getAttachContent(String pathOrName, Project project) throws IOException {
         try {
             return Optional.ofNullable(new URL(pathOrName).openStream()).map(in -> {
                 try {
@@ -86,19 +85,18 @@ public class FileUtils {
                 return Optional.of(org.apache.commons.io.FileUtils.readFileToString(file, StandardCharsets.UTF_8));
             }
 
-            return getAttachContent(project.getLocalRepository(),project.getDependencies(),pathOrName);
+            return getAttachContent(project,pathOrName);
         }
     }
 
     /**
      * 获取Attach内容
-     * @param localRepository 本地仓库路径
-     * @param dependencies 依赖列表
+     * @param project 项目
      * @param pathOrName 名称或路径
      * @return Attach内容
      */
-    public static Optional<String> getAttachContent(String localRepository, Set<Dependency> dependencies, String pathOrName){
-        return getFileContents(pathOrName + ATTACH_SUFFIX,localRepository,dependencies).findFirst();
+    public static Optional<String> getAttachContent(Project project, String pathOrName){
+        return getFileContents(pathOrName + ATTACH_SUFFIX,project).findFirst();
     }
 
 }

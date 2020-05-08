@@ -5,6 +5,9 @@ import org.apache.commons.io.FileUtils;
 import top.guyi.iot.ipojo.compile.lib.compile.entry.CompileClass;
 import top.guyi.iot.ipojo.compile.lib.configuration.Compile;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Repository;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Server;
 import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.ManifestExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.entry.Manifest;
@@ -12,6 +15,11 @@ import top.guyi.iot.ipojo.compile.lib.expand.manifest.entry.ListManifest;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
