@@ -1,11 +1,9 @@
 package top.guyi.iot.compile.maven.mojo.configuration;
 
 import lombok.Data;
-import org.apache.maven.project.MavenProject;
+import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.utils.StringUtils;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
-import top.guyi.iot.ipojo.compile.lib.configuration.entry.Repository;
-import top.guyi.iot.ipojo.compile.lib.configuration.entry.Server;
 import top.guyi.iot.ipojo.compile.lib.maven.MavenHelper;
 import top.guyi.iot.ipojo.compile.lib.utils.MavenUtils;
 
@@ -18,11 +16,8 @@ import java.util.stream.Stream;
 @Data
 public class FelixConfiguration {
 
-    private MavenProject project;
-    private String localRepository;
+    private Project project;
     private String projectBundle;
-    private Set<Server> servers = Collections.emptySet();
-    private List<Repository> repositories;
 
     private Map<String,String> config;
     private List<Dependency> bundles;
@@ -79,7 +74,7 @@ public class FelixConfiguration {
 
     public String getProjectBundle() {
         if (StringUtils.isEmpty(this.projectBundle)){
-            File target = new File(String.format("%s/target",project.getBasedir()));
+            File target = new File(String.format("%s/target",project.getBaseDir()));
             String artifactId = project.getArtifactId();
             this.projectBundle = Optional.ofNullable(target.listFiles((dir, name) -> name.contains(artifactId) && name.endsWith(".jar")))
                     .map(Arrays::stream)
@@ -89,7 +84,7 @@ public class FelixConfiguration {
         }
 
         if (this.projectBundle != null && !this.projectBundle.startsWith("file:///")){
-            this.projectBundle = String.format("file:///%s/%s",project.getBasedir(),this.projectBundle);
+            this.projectBundle = String.format("file:///%s/%s",project.getBaseDir(),this.projectBundle);
         }
 
         return this.projectBundle;
@@ -100,18 +95,16 @@ public class FelixConfiguration {
         if (!config.containsKey("felix.auto.start.1")){
             StringBuilder sb = new StringBuilder();
             this.getBundles().forEach(bundle -> {
-                MavenUtils.get(this.localRepository,bundle)
-                        .ifPresent(path -> {
-                            if (Files.notExists(Paths.get(path))){
-                                MavenHelper.resolveArtifact(
-                                        this.repositories,
-                                        this.servers,
-                                        this.localRepository,
-                                        bundle.getName()
-                                );
-                            }
-                            sb.append("file:///").append(path).append(" ");
-                        });
+                Optional<String> path = MavenUtils.get(project,bundle);
+                if (!path.isPresent() || Files.notExists(Paths.get(path.get()))){
+                    MavenHelper.resolveArtifact(
+                            project.getRepositories(),
+                            project.getServers(),
+                            project.getLocalRepository(),
+                            bundle.getName()
+                    );
+                }
+                path.ifPresent(p -> sb.append("file:///").append(p).append(" "));
             });
             if (!StringUtils.isEmpty(this.getProjectBundle())){
                 sb.append(this.getProjectBundle());

@@ -7,21 +7,14 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 import top.guyi.iot.ipojo.compile.lib.maven.MavenHelper;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Data
@@ -103,11 +96,6 @@ public class MavenUtils {
                 .map(MavenUtils::getSnapshotVersion)
                 .filter(Objects::nonNull)
                 .max(Comparator.comparing(SnapshotVersion::getLastUpdated));
-
-        if (version.isPresent()
-                && Files.notExists(Paths.get(getLocation(project.getLocalRepository(),dependency,version.get())))) {
-            MavenHelper.getDependencies(project,dependency);
-        }
 
         return version.map(v -> getLocation(project.getLocalRepository(),dependency,v));
     }

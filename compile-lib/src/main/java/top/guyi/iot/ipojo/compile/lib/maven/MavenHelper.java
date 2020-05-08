@@ -22,8 +22,6 @@ import top.guyi.iot.ipojo.compile.lib.configuration.entry.Repository;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Server;
 import top.guyi.iot.ipojo.compile.lib.maven.util.Booter;
 
-import java.io.File;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;

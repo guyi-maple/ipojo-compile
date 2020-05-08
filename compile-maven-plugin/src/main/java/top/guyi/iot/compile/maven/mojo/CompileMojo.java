@@ -2,6 +2,7 @@ package top.guyi.iot.compile.maven.mojo;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.eclipse.aether.repository.RemoteRepository;
+import top.guyi.iot.compile.maven.mojo.utils.ProjectUtils;
 import top.guyi.iot.ipojo.compile.lib.CompileExecutor;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import org.apache.maven.execution.MavenSession;
@@ -38,7 +39,7 @@ public class CompileMojo extends AbstractMojo {
     public void execute() {
         try {
             CompileExecutor executor = new CompileExecutor();
-            executor.execute(this.createProjectInfo())
+            executor.execute(ProjectUtils.createProjectInfo(session,project,remoteRepos,builder))
                     .ifPresent(compile -> this.project.getBuild().setFinalName(
                             Optional.ofNullable(compile.getProject().getFinalName())
                                     .map(name -> name + "-" + compile.getProject().getVersion())
@@ -48,61 +49,6 @@ public class CompileMojo extends AbstractMojo {
             e.printStackTrace();
             throw new RuntimeException(e.getMessage());
         }
-    }
-
-    private Project createProjectInfo() throws DependencyGraphBuilderException {
-        Project project = new Project();
-        project.setServers(
-                session.getRequest().getServers()
-                        .stream()
-                        .map(server -> new Server(server.getId(),server.getUsername(),server.getPassword()))
-                        .collect(Collectors.toSet())
-        );
-        project.setGroupId(this.project.getGroupId());
-        project.setArtifactId(this.project.getArtifactId());
-        project.setVersion(this.project.getVersion());
-        project.setDependencies(this.getDependency());
-        project.setBaseDir(this.project.getBasedir().getAbsolutePath());
-        project.setWork(this.project.getBuild().getOutputDirectory());
-        project.setLocalRepository(session.getRepositorySession().getLocalRepository().getBasedir().getAbsolutePath());
-        project.setRepositories(
-                this.remoteRepos
-                        .stream()
-                        .map(repo -> new Repository(
-                                repo.getId(),
-                                repo.getContentType(),
-                                repo.getUrl())
-                        ).collect(Collectors.toList())
-        );
-        return project;
-    }
-
-    private Set<Dependency> getDependency() throws DependencyGraphBuilderException {
-        ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
-        buildingRequest.setProject(project);
-
-        Set<DependencyNode> dependencyNodes = new HashSet<>();
-        listDependencyNode(builder.buildDependencyGraph(buildingRequest, null),dependencyNodes);
-
-        return dependencyNodes
-                .stream()
-                .map(DependencyNode::getArtifact)
-                .filter(artifact -> !(artifact.getArtifactId().equals(project.getArtifactId())
-                        && artifact.getGroupId().equals(project.getGroupId())))
-                .filter(artifact -> !"scope".equals(artifact.getScope()))
-                .map(artifact -> new Dependency(
-                        artifact.getGroupId(),
-                        artifact.getArtifactId(),
-                        artifact.getBaseVersion(),
-                        artifact.getScope()))
-                .collect(Collectors.toSet());
-    }
-
-    private Set<DependencyNode> listDependencyNode(DependencyNode node, Set<DependencyNode> nodes){
-        nodes.add(node);
-        Optional.ofNullable(node.getChildren())
-                .ifPresent(children -> children.forEach(child -> listDependencyNode(child,nodes)));
-        return nodes;
     }
 
 }

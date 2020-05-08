@@ -12,6 +12,7 @@ import top.guyi.iot.ipojo.compile.lib.enums.CompileType;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.ManifestExpand;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.entry.Manifest;
 import top.guyi.iot.ipojo.compile.lib.expand.manifest.entry.ListManifest;
+import top.guyi.iot.ipojo.compile.lib.maven.MavenHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +50,10 @@ public class DependencyManifestExpand implements ManifestExpand {
             if (root.mkdirs()){
                 for (Dependency dependency : dependencies) {
                     dependency.get(compile.getProject()).ifPresent(path -> {
+                        if (Files.notExists(Paths.get(path))){
+                            MavenHelper.getDependencies(compile.getProject(),dependency);
+                        }
+
                         File target = new File(root.getAbsolutePath() + "/" + dependency.getFileName());
                         File source = new File(path);
                         try {
