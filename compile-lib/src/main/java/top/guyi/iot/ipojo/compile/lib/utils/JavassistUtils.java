@@ -38,7 +38,12 @@ public class JavassistUtils {
         Matcher matcher = genericPattern.matcher(field.getGenericSignature());
         if (matcher.find()){
             return Arrays.stream(matcher.group(1).split(";"))
-                    .map(value -> value.replace("L","").replaceAll("/","."))
+                    .map(value -> {
+                        if (value.startsWith("L")){
+                            value = value.substring(1);
+                        }
+                        return value.replaceAll("/",".");
+                    })
                     .map(value -> {
                         try {
                             return pool.get(value);

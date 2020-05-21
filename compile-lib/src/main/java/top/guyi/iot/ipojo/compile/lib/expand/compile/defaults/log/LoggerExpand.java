@@ -37,8 +37,7 @@ public class LoggerExpand implements CompileExpand {
                                 .map(field -> AnnotationUtils
                                         .getAnnotationValue(component.getClasses(),field,AnnotationNames.Log,"value")
                                         .map(value -> new LoggerEntry(field,((StringMemberValue) value).getValue()))
-                                        .orElse(null))
-                                .filter(Objects::nonNull)
+                                        .orElse(new LoggerEntry(field, "default")))
                                 .collect(Collectors.toList())
                         )
                 )

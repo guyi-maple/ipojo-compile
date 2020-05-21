@@ -27,8 +27,17 @@ public class CompileFormat {
         return name.substring(0,1).toLowerCase() + name.substring(1);
     }
 
+    private static Map<String,Object> getRealValue(Map<String,Object> configuration){
+        configuration.forEach((key, value) -> {
+            if (value instanceof Map && ((Map) value).containsKey("value")) {
+                configuration.put(key, ((Map) value).get("value"));
+            }
+        });
+        return configuration;
+    };
+
     public static Compile format(Map<String,Object> configuration){
-        String json = gson.toJson(formatMap(Compile.class,configuration));
+        String json = gson.toJson(formatMap(Compile.class,getRealValue(configuration)));
         return gson.fromJson(json,Compile.class);
     }
 
@@ -49,7 +58,7 @@ public class CompileFormat {
                 .forEach(method -> {
                     String name = getFieldName(method);
                     try {
-                        Field field = Compile.class.getDeclaredField(name);
+                        Field field = classes.getDeclaredField(name);
                         SerializedName serializedName = field.getAnnotation(SerializedName.class);
                         if (serializedName != null){
                             name = serializedName.value();
