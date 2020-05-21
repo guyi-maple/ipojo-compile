@@ -53,7 +53,7 @@ public class FelixMojo extends AbstractMojo {
         }
         configuration.setProject(ProjectUtils.createProjectInfo(session,project,remoteRepos,builder));
         this.writeConfig(base,configuration);
-        org.apache.felix.main.Main.main(new String[0]);
+        org.apache.felix.main.Main.main(configuration.getArgs().toArray(new String[0]));
     }
 
     private void writeConfig(String base,FelixConfiguration configuration) throws IOException {

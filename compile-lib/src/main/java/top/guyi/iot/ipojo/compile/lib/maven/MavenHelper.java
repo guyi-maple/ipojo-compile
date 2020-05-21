@@ -1,5 +1,11 @@
 package top.guyi.iot.ipojo.compile.lib.maven;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -22,12 +28,43 @@ import top.guyi.iot.ipojo.compile.lib.configuration.entry.Repository;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Server;
 import top.guyi.iot.ipojo.compile.lib.maven.util.Booter;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class MavenHelper {
+
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final String cacheDir = ".compile.cache";
+    private static final String dependencyCachePath = cacheDir + "/dependency.cache.json";
+    private static Map<String,Set<top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency>> dependencyCache = new HashMap<>();
+
+
+    static {
+        if (Files.exists(Paths.get(dependencyCachePath))){
+            try {
+                dependencyCache = gson.fromJson(
+                        IOUtils.toString(new FileInputStream(dependencyCachePath), StandardCharsets.UTF_8),
+                        new TypeToken<Map<String,Set<top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency>>>(){}.getType()
+                );
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @SneakyThrows
+    private static void addCache(String name, Set<top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency> dependencies){
+        dependencyCache.put(name,dependencies);
+        String json = gson.toJson(dependencyCache);
+        if (Files.notExists(Paths.get(cacheDir))){
+            Files.createDirectory(Paths.get(cacheDir));
+        }
+        FileUtils.writeByteArrayToFile(new File(dependencyCachePath),json.getBytes());
+    }
 
     private static RepositorySystemSession buildSession(top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency root,RepositorySystem system,Project project){
         return root.get(project)
@@ -45,6 +82,11 @@ public class MavenHelper {
             Project project,
             top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency root){
         try {
+
+            if (dependencyCache.containsKey(root.getName())){
+                return dependencyCache.get(root.getName());
+            }
+
             RepositorySystem system = Booter.newRepositorySystem();
             RepositorySystemSession session = buildSession(root,system,project);
             CollectRequest request = buildRequest(root,project.getRepositories(),project.getServers());
@@ -68,6 +110,9 @@ public class MavenHelper {
                     return true;
                 }
             });
+
+            addCache(root.getName(),dependencies);
+
             dependencies.add(root);
 
             dependencies

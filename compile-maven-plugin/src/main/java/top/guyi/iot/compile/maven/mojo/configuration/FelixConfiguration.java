@@ -16,6 +16,8 @@ import java.util.stream.Stream;
 @Data
 public class FelixConfiguration {
 
+    private List<String> args = Collections.emptyList();
+
     private Project project;
     private String projectBundle;
 
