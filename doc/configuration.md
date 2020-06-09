@@ -113,3 +113,31 @@ Bundle编译时会搜索所有的依赖，当依赖包中存在ipojo.compile文�
     "attach": ["test"]
 }
 ```
+
+# 范例
+
+``` json
+{
+  "name": "iot-manager-plugin",
+  "package": "com.robotaiot.iot.plugin.manager",
+  "type": "bundle",
+  "jdk": "7",
+  "project": {
+    "version": "1.3.0.0"
+  },
+  "configuration": {
+    "vertx.server": "tcp://ihgu.cqccn.com:1883"
+  },
+  "attach": "igos",
+  "manifest": {
+    "Import-Package": [
+      "javax.net",
+      "javax.net.ssl",
+      "javax.naming"
+    ]
+  },
+  "env": {
+    "thread.max.count": "3"
+  }
+}
+```
