@@ -17,4 +17,4 @@
 
 ### 使用
 
-具体使用方式见 [WiKi](https://github.com/guyi-maple/ipojo-compile/blob/master/doc/index.md)
+具体使用方式见 [文档](https://github.com/guyi-maple/ipojo-compile/blob/master/doc/index.md)
