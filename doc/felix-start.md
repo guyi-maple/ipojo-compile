@@ -8,9 +8,11 @@
 ``` json
 {
     "bundles": [
-        "groupId": "...",
-        "artifactId": "...",
-        "version": "..."
+        {
+            "groupId": "...",
+             "artifactId": "...",
+             "version": "..."
+        }
     ]
 }
 ```
