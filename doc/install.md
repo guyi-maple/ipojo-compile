@@ -47,20 +47,24 @@
 
 * name - Bundle名称
 * package - Bundle根包名
+* type - 打包类型
 
 以上字段为<code>ipojo.compile</code>文件的必要字段
 
-更多字段请参见 [配置项列表]("")
+#### 详细
+
+更多关于编译配置文件的说明，请参见 [编译配置文件](configuration.md)
 
 #### 示例
 
 ``` json
 {
     "name": "test-bundle",
-    "package": "top.guyi.iot.ipojo.test"
+    "package": "top.guyi.iot.ipojo.test",
+    "type": "bundle"
 }
 ```
 
 ### 编译及打包
 
-pom.xml 配置完成后，正常运行 mvn compile , mvn package 即可。
+配置工作完成后，正常运行 mvn compile , mvn package 即可。
