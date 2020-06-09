@@ -33,10 +33,10 @@ public class FelixConfiguration {
         bundles.add(new Dependency("org.fusesource.jansi","jansi","1.17.1",null));
         bundles.add(new Dependency("org.jline","jline","3.7.0",null));
         bundles.add(new Dependency("org.apache.felix","org.apache.felix.eventadmin","1.5.0",null));
-        bundles.add(new Dependency("org.apache.felix","org.apache.felix.log","1.2.0",null));
         bundles.add(new Dependency("org.apache.felix","org.apache.felix.gogo.runtime","1.1.0",null));
         bundles.add(new Dependency("org.apache.felix","org.apache.felix.gogo.command","1.0.2",null));
         bundles.add(new Dependency("org.apache.felix","org.apache.felix.gogo.jline","1.1.0",null));
+        bundles.add(new Dependency("org.apache.felix","org.apache.felix.log","1.2.0",null));
     }
 
     public void setConfig(Map<String, String> config) {
