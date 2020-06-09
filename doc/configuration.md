@@ -126,7 +126,7 @@ Bundle编译时会搜索所有的依赖，当依赖包中存在ipojo.compile文�
     "version": "1.3.0.0"
   },
   "configuration": {
-    "vertx.server": "tcp://ihgu.cqccn.com:1883"
+    "vertx.server": "tcp://127.0.0.1:1883"
   },
   "attach": "igos",
   "manifest": {
