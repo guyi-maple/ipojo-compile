@@ -11,18 +11,18 @@
 
 # 配置项
 
-| 配置项 | 含义 | 必须 |
-| ---- | ---- | ---- |
-| name | Bundle名称，此配置会被应用到MANIFEST.INF文件中的 <code>Bundle-SymbolicName</code> 、 <code>Bundle-Name</code> 字段中 |√|
-| package | 项目根包名 |√|
-| type |打包类型。bundle - Bundle包；component - 支持库 |√|
-| jdk |强制将Class文件格式为指定的JDK版本。none - 不格式化；7 - Java7； 8 - Java8|
-| configuration |项目配置，与[@ConfigurationKey](https://github.com/guyi-maple/ipojo/blob/master/src/main/java/top/guyi/iot/ipojo/application/osgi/configuration/annotation/ConfigurationKey.java) 结合使用|
-| env |环境变量配置，此配置项中的值可以通过 [ApplicationContext](https://github.com/guyi-maple/ipojo/blob/master/src/main/java/top/guyi/iot/ipojo/application/ApplicationContext.java) .getEvn(key) 获取|
-| manifest | MANIFEST.INF文件配置，此配置项中的字段将会应用到MANIFEST.INF文件中|
-| exclude | 排除配置，参见[排除配置](## 排除配置)|
-| project | 项目信息配置，参见[项目信息配置](#项目信息配置)|
-| attach|附加编译配置文件名称(不包含文件后缀)，参见 [附加编译配置文件](## 附加编译配置文件)|
+| 配置项 | 含义 | 格式 |必须 |
+| ---- | ---- | ---- | ----|
+| name | Bundle名称，此配置会被应用到MANIFEST.INF文件中的 <code>Bundle-SymbolicName</code> 、 <code>Bundle-Name</code> 字段中|string |√|
+| package | 项目根包名 |string|√|
+| type |打包类型。bundle - Bundle包；component - 支持库 |string|√|
+| jdk |强制将Class文件格式为指定的JDK版本。none - 不格式化；7 - Java7； 8 - Java8|string|
+| configuration |项目配置，与[@ConfigurationKey](https://github.com/guyi-maple/ipojo/blob/master/src/main/java/top/guyi/iot/ipojo/application/osgi/configuration/annotation/ConfigurationKey.java) 结合使用|object|
+| env |环境变量配置，此配置项中的值可以通过 [ApplicationContext](https://github.com/guyi-maple/ipojo/blob/master/src/main/java/top/guyi/iot/ipojo/application/ApplicationContext.java) .getEvn(key) 获取|object|
+| manifest | MANIFEST.INF文件配置，此配置项中的字段将会应用到MANIFEST.INF文件中|object|
+| exclude | 排除配置，参见[排除配置](#排除配置)|object|
+| project | 项目信息配置，参见[项目信息配置](#项目信息配置)|object|
+| attach|附加编译配置文件名称(不包含文件后缀)，参见 [附加编译配置文件](#附加编译配置文件)|array|
 
 ## 排除配置
 
@@ -48,4 +48,68 @@
 |localRepository| 本地Maven仓库路径|
 |servers|Maven服务器认证信息|
 
+## 附加编译配置文件
 
+除 <code>ipojo.compile</code> 文件外，还可以使用附加编译配置文件进行编译配置。
+
+附件编译配置文件 <code>*.attach</code> ，格式、配置项与<code>ipojo.compile</code> 相同。
+
+可在<code>ipojo.compile</code>中配置attach，选择需要使用的attach文件。
+
+#### 存放路径
+
+* <code>classpath</code>
+* 项目根目录
+
+# 配置继承
+
+Bundle编译时会搜索所有的依赖，当依赖包中存在ipojo.compile文件时，会将其中的内容继承到当前项目的编译配置信息中。
+
+当不想从依赖中继承编译配置时，可以使用<code>override</code>字段。
+
+如项目本身的exclude配置为
+
+``` json
+{
+    "exclude": {
+        "scope": ["test","provide"]
+    }
+}
+```
+
+如果想保持此配置，不从依赖中继承，可写为
+
+``` json
+{
+    "exclude": {
+        "override": false,
+        "value": {
+            "scope": ["test","provide"]
+        }
+    }
+}
+```
+
+# 配置值降级
+
+当配置项类型为数组(array)时，如果只有一个值，支持直接写值，不需要使用数组
+
+以下两种写法作用一致
+
+``` json
+{
+    "manifest": {
+        "Import-Package": ["top.guyi.test"]
+    },
+    "attach": "test"
+}
+```
+
+``` json
+{
+    "manifest": {
+        "Import-Package": "top.guyi.test"
+    },
+    "attach": ["test"]
+}
+```
