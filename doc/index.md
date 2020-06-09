@@ -2,6 +2,7 @@
 
 * [安装](install.md)
 * [编译配置文件](configuration.md)
+* [使用范例：添加依赖](add-dependencies.md)
 
 ## 使用IDEA
 
