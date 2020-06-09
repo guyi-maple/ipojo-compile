@@ -1,7 +1,8 @@
 package top.guyi.iot.ipojo.compile.lib.utils;
 
+import javassist.ClassPool;
+import javassist.NotFoundException;
 import org.apache.commons.io.IOUtils;
-import top.guyi.iot.ipojo.compile.lib.configuration.entry.Dependency;
 import top.guyi.iot.ipojo.compile.lib.configuration.entry.Project;
 
 import java.io.*;
@@ -9,10 +10,7 @@ import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,7 +26,26 @@ public class FileUtils {
     public static final String COMPILE_FILE_NAME = "ipojo.compile";
 
     public static Stream<String> getFileContents(String name,Project project){
-        return project.getDependencies().stream()
+        List<String> list = new LinkedList<>();
+        File file = new File(String.format("%s/%s",project.getBaseDir(), name));
+        if (file.exists()){
+            try {
+                list.add(IOUtils.toString(new FileInputStream(file), StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        file = new File(String.format("%s/%s",project.getWork(), name));
+        if (file.exists()){
+            try {
+                list.add(IOUtils.toString(new FileInputStream(file), StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        project.getDependencies().stream()
                 .map(d -> MavenUtils.get(project,d).orElse(null))
                 .filter(Objects::nonNull)
                 .map(path -> {
@@ -46,7 +63,10 @@ public class FileUtils {
                     }
                     return null;
                 })
-                .filter(Objects::nonNull);
+                .filter(Objects::nonNull)
+                .forEach(list::add);
+
+        return list.stream();
     }
 
     /**
