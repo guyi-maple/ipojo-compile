@@ -17,5 +17,5 @@
 | package | 项目根包名 |√|
 | type |打包类型。bundle - Bundle包；component - 支持库 |√|
 | jdk |强制将Class文件格式为指定的JDK版本。none - 不格式化；7 - Java7； 8 - Java8|
-| configuration | | 项目配置，与[@ConfigurationKey](https://github.com/guyi-maple/ipojo/blob/master/src/main/java/top/guyi/iot/ipojo/application/osgi/configuration/annotation/ConfigurationKey.java) 结合使用|
+| configuration |项目配置，与[@ConfigurationKey](https://github.com/guyi-maple/ipojo/blob/master/src/main/java/top/guyi/iot/ipojo/application/osgi/configuration/annotation/ConfigurationKey.java) 结合使用|
 | env |环境变量配置，此配置项中的值可以通过 [ApplicationContext](https://github.com/guyi-maple/ipojo/blob/master/src/main/java/top/guyi/iot/ipojo/application/ApplicationContext.java) .getEvn(key) 获取|
