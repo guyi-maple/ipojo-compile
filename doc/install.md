@@ -37,6 +37,30 @@
 </pluginRepositories>
 ```
 
+### 编译配置文件 
+
+使用ipojo-compile打包Bundle需要在项目中存在编译配置文件 <code>ipojo.compile</code> ， 文件格式为JSON
+
+编译配置可以存放在项目根目录中，也可以存放在 <code>classpath</code> 路径下
+
+#### 必须字段
+
+* name - Bundle名称
+* package - Bundle根包名
+
+以上字段为<code>ipojo.compile</code>文件的必要字段
+
+更多字段请参见 [配置项列表]("")
+
+#### 示例
+
+``` json
+{
+    "name": "test-bundle",
+    "package": "top.guyi.iot.ipojo.test"
+}
+```
+
 ### 编译及打包
 
 pom.xml 配置完成后，正常运行 mvn compile , mvn package 即可。
