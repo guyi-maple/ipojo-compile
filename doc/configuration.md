@@ -26,12 +26,12 @@
 
 ## 排除配置
 
-| 配置项 | 含义|
-|----|----|
-|copy|复制依赖包到lib目录时排除的指定依赖，依赖名称格式为 <code>groupId:artifactId:version</code>， 支持正则表达式。|
-|export|生成MANIFEST.INF文件中的Export-Package时排除指定包名，支持正则表达式。|
-|import|生成MANIFEST.INF文件中的Import-Package时排除指定包名，支持正则表达式。|
-|scope|复制依赖包到lib目录时排除生命周期为指定项的依赖。|
+| 配置项 | 含义|类型|
+|----|----|----|
+|copy|复制依赖包到lib目录时排除的指定依赖，依赖名称格式为 <code>groupId:artifactId:version</code>， 支持正则表达式。|array|
+|export|生成MANIFEST.INF文件中的Export-Package时排除指定包名，支持正则表达式。|array|
+|import|生成MANIFEST.INF文件中的Import-Package时排除指定包名，支持正则表达式。|array|
+|scope|复制依赖包到lib目录时排除生命周期为指定项的依赖。|array|
 
 ## 项目信息配置
 
