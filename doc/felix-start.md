@@ -10,8 +10,8 @@
     "bundles": [
         {
             "groupId": "...",
-             "artifactId": "...",
-             "version": "..."
+            "artifactId": "...",
+            "version": "..."
         }
     ]
 }
