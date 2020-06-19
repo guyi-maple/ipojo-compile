@@ -40,6 +40,7 @@ public class ClassNames {
     public static final String CoapCurrent = "top.guyi.iot.ipojo.module.coap.utils.CoapCurrent";
 
     public static final String MonoAwaiter = "top.guyi.iot.ipojo.module.stream.async.awaiter.MonoAwaiter";
+    public static final String FluxAwaiter = "top.guyi.iot.ipojo.module.stream.async.awaiter.FluxAwaiter";
 
     public static final String TimeType = "top.guyi.iot.ipojo.application.osgi.timer.enums.TimeType";
     public static final String AbstractTimerManager = "top.guyi.iot.ipojo.application.osgi.timer.AbstractTimerManager";

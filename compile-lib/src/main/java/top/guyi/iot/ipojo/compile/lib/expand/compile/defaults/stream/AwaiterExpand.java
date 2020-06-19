@@ -58,11 +58,12 @@ public class AwaiterExpand implements CompileExpand {
                 .filter(fields -> !fields.isEmpty())
                 .forEach(fields -> {
                     StringBuffer setCode = new StringBuffer();
+                    CtClass fluxAwaiter = JavassistUtils.get(pool,ClassNames.FluxAwaiter);
                     fields.forEach(field -> setCode.append(
                             String.format(
                                     "$0.%s = %s.create(%s);\n",
                                     field.getField().getName(),
-                                    ClassNames.MonoAwaiter,
+                                    JavassistUtils.equalsType(field.getField(),fluxAwaiter) ? ClassNames.FluxAwaiter : ClassNames.MonoAwaiter,
                                     field.isSync()
                             )
                     ));
