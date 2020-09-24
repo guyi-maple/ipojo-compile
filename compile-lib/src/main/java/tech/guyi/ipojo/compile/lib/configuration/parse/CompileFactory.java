@@ -97,6 +97,10 @@ public class CompileFactory {
             file = new File(project.getBaseDir() + "/ipojo.compile");
         }
 
+        if (!file.exists()){
+            return null;
+        }
+
         Compile compile = this.create(file,project);
         compile.setType(Optional.ofNullable(compile.getType()).orElse(CompileType.COMPONENT));
         compile.getProject().extend(project);

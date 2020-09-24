@@ -6,7 +6,7 @@
 
     <groupId>tech.guyi.ipojo</groupId>
     <artifactId>ipojo-compile</artifactId>
-    <version>1.0.0.1</version>
+    <version>1.0.0.2</version>
     <modules>
         <module>compile-lib</module>
         <module>compile-maven-plugin</module>
@@ -95,6 +95,17 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.8</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>oss</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
