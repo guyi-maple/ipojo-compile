@@ -73,10 +73,10 @@
 <!--                            </validate>-->
                             <package>
 <!--                                org.apache.maven.plugins:maven-jar-plugin:3.1.0:jar,-->
-                                top.guyi.ipojo.compile:compile-maven-plugin:1.3.0.0:package
+                                tech.guyi.ipojo:compile-maven-plugin:1.0.0.1:package
                             </package>
                             <install>
-                                top.guyi.ipojo.compile:compile-maven-plugin:1.3.0.0:package,
+                                tech.guyi.ipojo:compile-maven-plugin:1.0.0.1:package,
                                 org.apache.maven.plugins:maven-install-plugin:3.0.0-M1:install
                             </install>
                             <deploy>
