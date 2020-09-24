@@ -6,7 +6,7 @@
   "project": {
     "dependencies": [
       {
-        "groupId": "top.guyi.iot.ipojo.module",
+        "groupId": "tech.guyi.ipojo.module",
         "artifactId": "coap-server",
         "version": "1.0.0.2-SNAPSHOT",
         "scope": "compile"

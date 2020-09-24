@@ -15,7 +15,7 @@
 <build>
     <plugins>
         <plugin>
-            <groupId>top.guyi.iot.ipojo.compile</groupId>
+            <groupId>top.guyi.ipojo.compile</groupId>
             <artifactId>compile-maven-plugin</artifactId>
             <version>1.0.0.2</version>
             <extensions>true</extensions>
@@ -60,7 +60,7 @@
 ``` json
 {
     "name": "test-bundle",
-    "package": "top.guyi.iot.ipojo.test",
+    "package": "tech.guyi.ipojo.test",
     "type": "bundle"
 }
 ```

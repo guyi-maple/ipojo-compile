@@ -4,14 +4,34 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>top.guyi.iot.ipojo.compile</groupId>
+    <groupId>tech.guyi.ipojo</groupId>
     <artifactId>ipojo-compile</artifactId>
-    <version>1.0.0.2-SNAPSHOT</version>
+    <version>1.0.0.0</version>
     <modules>
         <module>compile-lib</module>
         <module>compile-maven-plugin</module>
     </modules>
     <packaging>pom</packaging>
+
+    <name>ipojo-compile</name>
+    <url>https://github.com/guyi-maple</url>
+    <description>tech.guyi.ipojo:ipojo component compile plugin</description>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <scm>
+        <url>https://github.com/guyi-maple/ipojo-compile</url>
+        <connection>https://github.com/guyi-maple/ipojo-compile.git</connection>
+    </scm>
+    <developers>
+        <developer>
+            <name>guyi-maple</name>
+            <email>guyi@guyi-maple.top</email>
+        </developer>
+    </developers>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -25,44 +45,77 @@
         <javassist.version>3.25.0-GA</javassist.version>
     </properties>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>iot</id>
-            <url>http://nexus.guyi-maple.top/content/repositories/iot/</url>
-        </pluginRepository>
-    </pluginRepositories>
-
-    <repositories>
-        <repository>
-            <id>aliyun</id>
-            <url>https://maven.aliyun.com/repository/public</url>
-        </repository>
-        <repository>
-            <id>iot</id>
-            <url>http://nexus.guyi-maple.top/content/repositories/iot/</url>
-        </repository>
-    </repositories>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <show>private</show>
+                    <nohelp>true</nohelp>
+                    <charset>UTF-8</charset>
+                    <encoding>UTF-8</encoding>
+                    <docencoding>UTF-8</docencoding>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <distributionManagement>
-        <repository>
-            <id>iot-releases</id>
-            <url>http://nexus.guyi-maple.top/content/repositories/iot-releases/</url>
-        </repository>
         <snapshotRepository>
-            <id>iot-snapshots</id>
-            <url>http://nexus.guyi-maple.top/content/repositories/iot-snapshots/</url>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
+        <repository>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>top.guyi.iot.ipojo</groupId>
+                <groupId>tech.guyi.ipojo</groupId>
                 <artifactId>ipojo</artifactId>
                 <version>${ipojo.version}</version>
             </dependency>
             <dependency>
-                <groupId>top.guyi.iot.ipojo.compile</groupId>
+                <groupId>tech.guyi.ipojo</groupId>
                 <artifactId>compile-lib</artifactId>
                 <version>${project.version}</version>
             </dependency>

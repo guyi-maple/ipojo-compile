@@ -4,25 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>ipojo-compile</artifactId>
-        <groupId>top.guyi.iot.ipojo.compile</groupId>
-        <version>1.0.0.2-SNAPSHOT</version>
+        <groupId>tech.guyi.ipojo</groupId>
+        <version>1.0.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>compile-lib</artifactId>
 
     <dependencies>
-
-<!--        <dependency>-->
-<!--            <groupId>top.guyi.iot.ipojo.module</groupId>-->
-<!--            <artifactId>coap-server</artifactId>-->
-<!--            <version>${ipojo.version}</version>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>top.guyi.iot.ipojo.module</groupId>-->
-<!--            <artifactId>stream</artifactId>-->
-<!--            <version>${ipojo.version}</version>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>com.google.code.gson</groupId>

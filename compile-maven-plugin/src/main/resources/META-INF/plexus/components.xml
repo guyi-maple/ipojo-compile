@@ -56,7 +56,7 @@
                             </process-resources>
                             <compile>
                                 org.apache.maven.plugins:maven-compiler-plugin:3.8.0:compile,
-                                top.guyi.iot.ipojo.compile:compile-maven-plugin:1.3.0.0:compile
+                                top.guyi.ipojo.compile:compile-maven-plugin:1.3.0.0:compile
                             </compile>
                             <process-classes>
                                 org.apache.maven.plugins:maven-plugin-plugin:3.6.0:descriptor
@@ -68,15 +68,15 @@
                                 org.apache.maven.plugins:maven-compiler-plugin:3.8.0:testCompile
                             </test-compile>
 <!--                            <validate>-->
-<!--                                top.guyi.iot.ipojo.compile:compile-maven-plugin:1.3.0.0:package,-->
-<!--                                top.guyi.iot.ipojo.compile:compile-maven-plugin:1.3.0.0:felix-->
+<!--                                top.guyi.ipojo.compile:compile-maven-plugin:1.3.0.0:package,-->
+<!--                                top.guyi.ipojo.compile:compile-maven-plugin:1.3.0.0:felix-->
 <!--                            </validate>-->
                             <package>
 <!--                                org.apache.maven.plugins:maven-jar-plugin:3.1.0:jar,-->
-                                top.guyi.iot.ipojo.compile:compile-maven-plugin:1.3.0.0:package
+                                top.guyi.ipojo.compile:compile-maven-plugin:1.3.0.0:package
                             </package>
                             <install>
-                                top.guyi.iot.ipojo.compile:compile-maven-plugin:1.3.0.0:package,
+                                top.guyi.ipojo.compile:compile-maven-plugin:1.3.0.0:package,
                                 org.apache.maven.plugins:maven-install-plugin:3.0.0-M1:install
                             </install>
                             <deploy>
