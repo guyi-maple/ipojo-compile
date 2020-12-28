@@ -6,7 +6,7 @@
 
     <groupId>tech.guyi.ipojo</groupId>
     <artifactId>ipojo-compile</artifactId>
-    <version>1.0.0.2</version>
+    <version>1.0.0.3</version>
     <modules>
         <module>compile-lib</module>
         <module>compile-maven-plugin</module>

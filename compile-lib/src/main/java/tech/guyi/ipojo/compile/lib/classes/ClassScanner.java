@@ -2,6 +2,7 @@ package tech.guyi.ipojo.compile.lib.classes;
 
 import com.google.gson.Gson;
 import javassist.CtClass;
+import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.BooleanMemberValue;
 import javassist.bytecode.annotation.IntegerMemberValue;
 import javassist.bytecode.annotation.StringMemberValue;
@@ -14,6 +15,7 @@ import tech.guyi.ipojo.compile.lib.compile.entry.ComponentInfo;
 import tech.guyi.ipojo.compile.lib.configuration.Compile;
 import tech.guyi.ipojo.compile.lib.configuration.entry.Dependency;
 import tech.guyi.ipojo.compile.lib.cons.AnnotationNames;
+import tech.guyi.ipojo.compile.lib.enums.CompileType;
 import tech.guyi.ipojo.compile.lib.utils.AnnotationUtils;
 import tech.guyi.ipojo.compile.lib.utils.StringUtils;
 
@@ -114,6 +116,32 @@ public class ClassScanner {
                         })
                         .orElse(null))
                 .filter(Objects::nonNull)
+                .filter(component -> {
+                    if (compile.getType() == CompileType.COMPONENT){
+                        return true;
+                    }
+
+                    Optional<Annotation> annotation = AnnotationUtils.getAnnotation(component.getClasses(), AnnotationNames.ConditionOnEnv);
+                    if (!annotation.isPresent()){
+                        return true;
+                    }
+
+                    String name = AnnotationUtils.getAnnotationValue(annotation.get(),"name")
+                            .map(value -> (StringMemberValue) value)
+                            .map(StringMemberValue::getValue)
+                            .orElse(null);
+
+                    String val = AnnotationUtils.getAnnotationValue(annotation.get(),"value")
+                            .map(value -> (StringMemberValue) value)
+                            .map(StringMemberValue::getValue)
+                            .orElse(null);
+
+                    if (StringUtils.isEmpty(name) || StringUtils.isEmpty(val)){
+                        return true;
+                    }
+
+                    return val.equals(compile.getEnv().get(name));
+                })
                 .collect(Collectors.toSet());
     }
 

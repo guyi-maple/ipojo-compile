@@ -178,10 +178,12 @@ public class CompileFactory {
      * @return 继承的编译配置
      */
     private Map<String,Map<String,Object>> getAllConfiguration(Project project) {
-        return FileUtils.getCompileFileContents(project)
+        Map<String,Map<String,Object>> configuration = new HashMap<>();
+        FileUtils.getCompileFileContents(project)
                 .stream()
                 .map(this::getConfiguration)
-                .collect(Collectors.toMap(this::getName, c -> c));
+                .forEach(config -> configuration.put(this.getName(config),config));
+        return configuration;
     }
 
     /**

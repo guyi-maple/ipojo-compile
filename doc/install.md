@@ -3,38 +3,16 @@
 
 ### pom.xml配置
 
-#### 修改打包类型
-
-``` xml
-<packing>ipojo-bundle</packing>
-```
-
-#### 加入插件配置
-
-``` xml
+```xml
 <build>
     <plugins>
         <plugin>
-            <groupId>top.guyi.ipojo.compile</groupId>
+            <groupId>tech.guyi.ipojo</groupId>
             <artifactId>compile-maven-plugin</artifactId>
-            <version>1.0.0.2</version>
-            <extensions>true</extensions>
+            <version>1.0.0.0</version>
         </plugin>
     </plugins>
 </build>
-```
-
-#### 私服配置
-
-此项目暂时还未放入Maven中央仓库中，使用前需要添加Nexus私服
-
-``` xml
-<pluginRepositories>
-    <pluginRepository>
-        <id>iot</id>
-        <url>http://nexus.guyi-maple.top/content/repositories/iot/</url>
-    </pluginRepository>
-</pluginRepositories>
 ```
 
 ### 编译配置文件 

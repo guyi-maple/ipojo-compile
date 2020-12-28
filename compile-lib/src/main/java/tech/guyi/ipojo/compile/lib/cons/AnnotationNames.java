@@ -21,4 +21,6 @@ public class AnnotationNames {
 
     public static final String Timer = "tech.guyi.ipojo.application.osgi.timer.annotation.Timer";
 
+    public static final String ConditionOnEnv = "tech.guyi.ipojo.application.annotation.ConditionOnEnv";
+
 }
