@@ -9,7 +9,25 @@
         <plugin>
             <groupId>tech.guyi.ipojo</groupId>
             <artifactId>compile-maven-plugin</artifactId>
-            <version>1.0.0.0</version>
+            <version>${ipojo.compile.version}</version>
+            <executions>
+                <execution>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>${maven.jar.plugin.version}</version>
+            <configuration>
+                <archive>
+                    <manifestFile>target/classes/META-INF/MANIFEST.MF</manifestFile>
+                </archive>
+            </configuration>
         </plugin>
     </plugins>
 </build>
