@@ -40,9 +40,13 @@ public class DependencyManifestExpand implements ManifestExpand {
             manifest.setKey("Bundle-ClassPath");
             manifest.setEndString(",.");
 
+            Map<String,Dependency> dependencyMap = new HashMap<>();
+            dependencies.forEach(dependency ->
+                    dependencyMap.put(dependency.getGroupId() + dependency.getArtifactId(), dependency));
+
             File root = new File(compile.getProject().getOutput() + "/lib");
             if (root.mkdirs()){
-                for (Dependency dependency : dependencies) {
+                for (Dependency dependency : dependencyMap.values()) {
                     dependency.get(compile.getProject()).ifPresent(path -> {
                         if (Files.notExists(Paths.get(path))){
                             MavenHelper.getDependencies(compile.getProject(),dependency);

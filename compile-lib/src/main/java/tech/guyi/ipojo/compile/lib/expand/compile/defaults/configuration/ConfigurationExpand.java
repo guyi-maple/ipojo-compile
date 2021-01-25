@@ -93,9 +93,12 @@ public class ConfigurationExpand implements CompileExpand {
                                         JavassistUtils.insertAfter(
                                                 constructor,
                                                 String.format(
-                                                        "$0.%s = \"%s\";\n",
+                                                        "$0.%s = %s;\n",
                                                         field.getField().getName(),
-                                                        value
+                                                        JavassistUtils.equalsType(
+                                                                field.getComponent().getClasses(),
+                                                                JavassistUtils.get(pool,String.class.getName())) ?
+                                                                "\"" + value + "\"" : value
                                                 )
                                         );
                                         field.getComponent().setWrite(true);

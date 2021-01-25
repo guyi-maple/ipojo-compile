@@ -63,7 +63,7 @@ public class Compile {
     private CompileExclude exclude = new CompileExclude();
 
     @Expose
-    private Map<String,String> configuration = Collections.emptyMap();
+    private Map<String,Object> configuration = Collections.emptyMap();
 
     @Expose
     private Map<String,String> env = Collections.emptyMap();
