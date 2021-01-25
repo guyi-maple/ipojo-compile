@@ -28,9 +28,7 @@ public class MapFieldInjector implements FieldInjector {
     public String injectCode(FieldEntry field, CtMethod setMethod, ClassPool pool) {
         List<CtClass> types = JavassistUtils.getGenerics(field.getField(),pool);
         try {
-            if (types.size() == 2
-                    && types.get(0).getName().equals(String.class.getName())
-                    && types.get(1).subtypeOf(pool.get(ClassNames.ForType))){
+            if (types.size() == 2 && types.get(1).subtypeOf(pool.get(ClassNames.ForType))){
 
                 if (StringUtils.isEmpty(field.getName())){
                     return String.format(
